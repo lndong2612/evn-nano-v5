@@ -54,81 +54,33 @@ In this repository, i will using yolov5 to detect the skin disense with the inpu
 
 ## <div align="left">Install</div>
 
-1. Download this weight name [best.pt](https://drive.google.com/file/d/11CMf6nW1meckuQMz_mJbEzjleGuMJOWC/view?usp=drive_link) and save with the following path: public/files/weight_init/best.pt
-
-2. Create and activate a virtual environment:
+1. Create and activate a virtual environment:
 
     ```sh
-    $ python3 -m venv venv && source venv/bin/activate
+    (base)$ conda create -n evn python=3.8
+    (base)$ conda activate evn
+    (base)$ cd evn-nano-v5
     ```
   
-3. Install the requirements:
+2. Install the requirements:
 
     ```sh
-    (venv)$ pip install -r requirements.txt
+    (env)$ cd evn-nano-v5
+    (env)$ pip install -r requirements.txt
     ```
 
-4. Run
+3. Run
 
     ```sh
-    (venv)$ python main.py
+    (env)$ python run.py
     ```
 
-## <div align="left">Example</div>
+In this an example result when camera catch an unusual object.
 
-I wrote an example code that sends an input image, receives the output, and uses that result to draw on the input image.
-
-Run in different console while running main.py
-
-```python
-    (venv)$ python test/test_client.py
-```
-
-{
-    "content": [
-        {
-            "label": "Hắc lào",
-            "score": "0.90",
-            "xmax": 436,
-            "xmin": 339,
-            "ymax": 238,
-            "ymin": 136
-        },
-        {
-            "label": "Lang ben",
-            "score": "0.91",
-            "xmax": 306,
-            "xmin": 203,
-            "ymax": 169,
-            "ymin": 45
-        },
-        {
-            "label": "Hắc lào",
-            "score": "0.93",
-            "xmax": 537,
-            "xmin": 414,
-            "ymax": 213,
-            "ymin": 83
-        },
-        {
-            "label": "Lang ben",
-            "score": "0.93",
-            "xmax": 223,
-            "xmin": 0,
-            "ymax": 281,
-            "ymin": 101
-        },
-        {
-            "detected_image": "resources/images/2023/09/13/detect/17284113092023_detected.jpg",
-            "original_image": "resources/images/2023/09/13/original/17284113092023_original.jpg"
-        }
-    ],
-    "status_code": 200
-}
+[{'xmin': 279, 'ymin': 344, 'xmax': 627, 'ymax': 565, 'score': '0.62', 'label': 'Fire'}, {'xmin': 0, 'ymin': 0, 'xmax': 1200, 'ymax': 603, 'score': '0.84', 'label': 'Smoke'}]
 
 <div align="center">
   <p>
-    <img width="80%" src="./background/17281613092023_detected.jpg"></a>
-    <img width="80%" src="./background/17491913092023_detected.jpg"></a>
+    <img width="90%" src="./resources/background/detected.jpg"></a>
   </p>
 
