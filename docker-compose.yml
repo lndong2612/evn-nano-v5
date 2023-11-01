@@ -1,0 +1,27 @@
+version: "3.2"
+
+services:
+  api:
+    image: "registry.thinklabs.com.vn:5000/tclinicaiapi:latest"
+    deploy:
+      replicas: 1
+      placement:
+        constraints: [node.labels.environment==development]
+      restart_policy:
+        condition: any
+    ports:
+      - target: 8080
+        published: 4059
+        mode: host
+    environment:
+      PORT: 8080
+      NODE_ENV: "production"
+      SERVICE_8080_NAME: "tclinicaiapi"
+      SERVICE_NAME: "tclinicaiapi"
+      SERVICE_TAGS: "tclinicaiapi"
+    volumes:
+      - "resources:/usr/src/app/resources"
+
+volumes:
+  resources:
+    driver: lizardfs

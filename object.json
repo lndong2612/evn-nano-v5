@@ -1,0 +1,29 @@
+{
+    "english_name": [
+        {"Fire": [
+            {"ID": 0},
+            {"length_name": "Dam_chay"},
+            {"vietnamese_name": "Đám cháy"}
+        ]},
+        {"Smoke": [
+            {"ID": 1},
+            {"length_name": "Cot_khoi"},
+            {"vietnamese_name": "Cột khói"}
+        ]},
+        {"Vehicle": [
+            {"ID": 2},
+            {"length_name": "Phuong_tien"},
+            {"vietnamese_name": "Phương tiện"}
+        ]},
+        {"Kite": [
+            {"ID": 3},
+            {"length_name": "Dieu"},
+            {"vietnamese_name": "Diều"}
+        ]},
+        {"Tree": [
+            {"ID": 4},
+            {"length_name": "Cay_coi"},
+            {"vietnamese_name": "Cây cối"}
+        ]}                                
+    ]
+}
