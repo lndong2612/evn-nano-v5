@@ -39,12 +39,9 @@ cap = VideoStream(URL).start()
 
 time.sleep(15.0)
 
-original = []
-detected = []
-
 @app.route('/')
 def index():
-    return 'Running ...'
+    return '[INFO] Running ...'
 
 def detect(info_json):
     global cap, output_fullsize, lock, output_resize

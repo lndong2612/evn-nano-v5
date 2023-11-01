@@ -22,7 +22,7 @@ data/*
 #resources/*
 #resources/images/*
 #resources/weight_init/*
-test/*
+# test/*
 data/images/*
 !data/*.yaml
 !data/hyps
@@ -46,7 +46,7 @@ VOC/
 
 # Neural Network weights -----------------------------------------------------------------------------------------------
 *.weights
-*.pt
+#*.pt
 *.pb
 *.onnx
 *.engine

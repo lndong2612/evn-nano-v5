@@ -76,4 +76,4 @@ def detect_method(image, info_system, device):
 
     except Exception as error:
         print("[INFO] Detect object failed")
-        print('Error: ', error)
+        print('[INFO] Error: ', error)
