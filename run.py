@@ -9,14 +9,13 @@ import logging
 import threading
 from config import settings
 from imutils.video import VideoStream
-from flask import Flask, jsonify, send_file, send_from_directory, Response
+from flask import Flask, jsonify, Response
 from utils.function import detect_method, health_check_nano
 
-# [logging config
+# logging config
 logging.basicConfig(format='%(asctime)s:%(levelname)s:%(filename)s:%(funcName)s:%(message)s',
                     datefmt='%Y-%m-%d %H:%M:%S',
                     level=logging.INFO)
-# logging config]
 
 output_fullsize = None
 output_resize = None
@@ -25,13 +24,13 @@ device = '' # cuda device, i.e. 0 or 0,1,2,3 or cpu
 
 with open(os.path.join(os.getcwd(), 'info.json'), "r") as outfile:
     info_json = json.load(outfile)
-    USERCAM = info_json['user_camera']
-    PASSWORDCAM = info_json['password_camera']
-    IPCAM = info_json['ip_camera']
-    PORTCAM = info_json['port_camera']
-    CHANNELCAM = info_json['channel_camera']
-    CROPRATE = info_json['crop_frame_rate']
-    IPEDGECOM = info_json['ip_edgecom']
+    USERCAM = info_json['user_camera']              # user name of camera 
+    PASSWORDCAM = info_json['password_camera']      # password of camera
+    IPCAM = info_json['ip_camera']                  # ip of camera
+    PORTCAM = info_json['port_camera']              # port of camera
+    CHANNELCAM = info_json['channel_camera']        # channel of camera
+    CROPRATE = info_json['crop_frame_rate']         # coordinate for crop input frame
+    IPEDGECOM = info_json['ip_edgecom']             # ip of nano computer
 
 app = Flask(__name__)
 URL = f'rtsp://{USERCAM}:{PASSWORDCAM}@{IPCAM}:{PORTCAM}/onvif{CHANNELCAM}'
@@ -41,8 +40,21 @@ time.sleep(15.0)
 
 @app.route('/')
 def index():
-    return '[INFO] Running ...'
+    return '[INFO] Everything has been prepared 👍.'
 
+def send_health_check_nano(ip_nano):
+    try: 
+        while(True):
+            t = time.localtime()
+            current_time = time.strftime("%d-%m-%Y %H:%M:%S", t)
+            print('[INFO] Sending nano computer health check ...')
+            print(f'[INFO] {current_time}.')
+            health_check_nano(ip_nano)
+            time.sleep(60)
+
+    except Exception as error:
+        return jsonify(status_code = 400, content={"success":"false", "error": str(error)})
+    
 def detect(info_json):
     global cap, output_fullsize, lock, output_resize
 
@@ -51,11 +63,9 @@ def detect(info_json):
     while True:
         frame = cap.read()
         frame_num += 1
-        if frame_num % 1000 == 0:
-            health_check_nano(IPEDGECOM)
         if frame_num % crop_rate == 0:
-           input_frame = frame.copy()
-           detect_method(input_frame, info_json, device)
+            input_frame = frame.copy()
+            detect_method(input_frame, info_json, device) # detect input frame of camera to check unusual object appearance
 
         with lock:
             output_fullsize = frame.copy()
@@ -116,6 +126,16 @@ def video_feed_resize():
     return Response(generate_resize(),
         mimetype = "multipart/x-mixed-replace; boundary=frame")
 
+@app.route('/api/reboot', methods = ['GET'])
+def reboot():
+    try:
+        os.system("shutdown -r -t 10")
+        mess = '[INFO] System reboot after a few seconds ...'
+
+        return jsonify(status_code = 200, content={'message':mess})
+    except SystemError as error:
+        mess = '[INFO] System reboot fail ...'
+        return jsonify(status_code = 400, content={"success":"false", "error": str(error)})
 
 if __name__ == "__main__":
     # signal.signal(signal.SIGINT, handler)
@@ -125,9 +145,15 @@ if __name__ == "__main__":
     p1.daemon = True
     p1.start()
 
+    # start a thread that will send active status of nano computer
+    p2 = threading.Thread(target=send_health_check_nano, args=(IPEDGECOM,))
+    p2.daemon = True
+    p2.start()
+
     host = settings.HOST
     port = int(settings.PORT)
     app.run(host=host, port=port, debug=settings.DEBUG)
 
 # release the video stream pointer
 cap.stop()
+cv2.destroyAllWindows() 
