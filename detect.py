@@ -61,9 +61,9 @@ def get_detected_object(weights, device, data, source):
     result = []
     messages = []
     imgsz = (640, 640)  # inference size (height, width)
-    conf_thres = 0.35  # confidence threshold
-    iou_thres = 0.55  # NMS IOU threshold
-    max_det = 1000  # maximum detections per image
+    conf_thres = 0.66  # confidence threshold
+    iou_thres = 0.75  # NMS IOU threshold
+    max_det = 10  # maximum detections per image
     classes = None # filter by class: --class 0, or --class 0 2 3
     agnostic_nms = False # class-agnostic NMS
 
@@ -103,13 +103,13 @@ def get_detected_object(weights, device, data, source):
                     s += f"{n} {names[int(c)]}{'s' * (n > 1)}, "  # add to string
                     name_label = f"{names[int(c)]}"
                     numbers_label = f"{n}"
-                    info_label = {
-                        "label": name_label,
-                        "numbers": numbers_label
-                    }
                     vn_label = convert_name_id(name_label, 'vietnamese_name')
                     object_mess = f"Phát hiện {numbers_label} {vn_label}."
                     messages.append(object_mess)                    
+                    info_label = {
+                        "label": name_label.upper(),
+                        "numbers": numbers_label
+                    }
                     result.append(info_label)
 
                 # Get results

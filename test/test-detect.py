@@ -79,7 +79,7 @@ input_image_name = 'evn5.jpg'
 input_image_path = f'./test/images/objects/{input_image_name}'
 image = cv2.imread(input_image_path)
 device = '' # cuda device, i.e. 0 or 0,1,2,3 or cpu
-weight_path = os.path.join(settings.MODEL, 'best2.pt') # model path
+weight_path = os.path.join(settings.MODEL, 'best.pt') # model path
 classified, det, result, messages = get_detected_object(weight_path, device, settings.DATA_COCO, input_image_path) # objects detection on image
 
 print(classified)

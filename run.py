@@ -9,7 +9,7 @@ import logging
 import threading
 from config import settings
 from imutils.video import VideoStream
-from flask import Flask, jsonify, send_file, send_from_directory, Response
+from flask import Flask, jsonify, send_file, send_from_directory, Response, request
 from utils.function import detect_method, health_check_nano
 
 # [logging config
@@ -37,7 +37,7 @@ app = Flask(__name__)
 URL = f'rtsp://{USERCAM}:{PASSWORDCAM}@{IPCAM}:{PORTCAM}/onvif{CHANNELCAM}'
 cap = VideoStream(URL).start()
 
-time.sleep(15.0)
+time.sleep(10.0)
 
 @app.route('/')
 def index():
@@ -51,7 +51,7 @@ def detect(info_json):
     while True:
         frame = cap.read()
         frame_num += 1
-        if frame_num % 1000 == 0:
+        if frame_num % 6000 == 0:
             health_check_nano(IPEDGECOM)
         if frame_num % crop_rate == 0:
            input_frame = frame.copy()
@@ -116,6 +116,26 @@ def video_feed_resize():
     return Response(generate_resize(),
         mimetype = "multipart/x-mixed-replace; boundary=frame")
 
+@app.route('/api/download_model', methods=['POST'])
+def download():
+    try:
+        file = request.files['file']
+        file.save('./resources/weight_init/best.pt') 
+        mess = '[INFO] Model saved!'
+        return jsonify(status_code = 200, content={'message':mess})
+    except SystemError as error:
+        mess = '[INFO] Save model fail ...'
+        return jsonify(status_code = 400, content={"success":"false", "error": str(error)})
+
+@app.route('/api/reboot', methods = ['GET'])
+def reboot():
+    try:
+        os.system("shutdown -r -t 10")
+        mess = '[INFO] System reboot after a few seconds ...'
+        return jsonify(status_code = 200, content={'message':mess})
+    except SystemError as error:
+        mess = '[INFO] System reboot fail ...'
+        return jsonify(status_code = 400, content={"success":"false", "error": str(error)})
 
 if __name__ == "__main__":
     # signal.signal(signal.SIGINT, handler)

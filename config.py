@@ -3,7 +3,7 @@ from pydantic import BaseSettings
 
 class Settings(BaseSettings):
     HOST: str = '0.0.0.0'
-    PORT: int = 8080
+    PORT: int = 9298
     DEBUG = True
     URLSV = 'https://tcameradev.thinklabs.com.vn/api'
     API_V1_STR: str = "/detect_object"
