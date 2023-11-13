@@ -9,7 +9,8 @@ import logging
 import threading
 from config import settings
 from imutils.video import VideoStream
-from flask import Flask, jsonify, send_file, send_from_directory, Response, request
+from flask import Flask, jsonify, Response, request
+from flask_cors import CORS
 from utils.function import detect_method, health_check_nano
 
 # [logging config
@@ -34,6 +35,7 @@ with open(os.path.join(os.getcwd(), 'info.json'), "r") as outfile:
     IPEDGECOM = info_json['ip_edgecom']
 
 app = Flask(__name__)
+CORS(app)
 URL = f'rtsp://{USERCAM}:{PASSWORDCAM}@{IPCAM}:{PORTCAM}/onvif{CHANNELCAM}'
 cap = VideoStream(URL).start()
 
@@ -136,6 +138,7 @@ def reboot():
     except SystemError as error:
         mess = '[INFO] System reboot fail ...'
         return jsonify(status_code = 400, content={"success":"false", "error": str(error)})
+    exit(0)
 
 if __name__ == "__main__":
     # signal.signal(signal.SIGINT, handler)
