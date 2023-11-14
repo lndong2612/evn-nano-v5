@@ -135,10 +135,11 @@ def reboot():
         os.system("shutdown -r -t 10")
         mess = '[INFO] System reboot after a few seconds ...'
         return jsonify(status_code = 200, content={'message':mess})
+        exit(0)
     except SystemError as error:
         mess = '[INFO] System reboot fail ...'
         return jsonify(status_code = 400, content={"success":"false", "error": str(error)})
-    exit(0)
+    
 
 if __name__ == "__main__":
     # signal.signal(signal.SIGINT, handler)
@@ -154,3 +155,4 @@ if __name__ == "__main__":
 
 # release the video stream pointer
 cap.stop()
+exit(0)
