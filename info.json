@@ -5,7 +5,20 @@
     "port_camera": "554",
     "channel_camera": "1",
     "ip_edgecom": "10.10.10.90",
-    "crop_frame_rate": 10000,
+    "crop_frame_rate": 20000,
     "sim_card": "0988223344",
-    "id_edge_computer": "PE1000NXT1"
+    "id_edge_computer": "PE1000NXT1",
+    "camera_type": "Dahua",
+    "coordinate": [
+        [
+            [
+                218,
+                48
+            ],
+            [
+                1859,
+                826
+            ]
+        ]
+    ]
 }

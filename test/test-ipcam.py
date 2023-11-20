@@ -8,8 +8,14 @@ USER = 'admin'
 PASSWORD = 'CHBAJT'
 IPADDRESS = '10.10.10.100'
 PORT = '554'
-
 url = f'rtsp://{USER}:{PASSWORD}@{IPADDRESS}:{PORT}/onvif1'
+
+# USER = 'admin'
+# PASSWORD = 'abcd1234'
+# IPADDRESS = '10.10.10.100'
+# PORT = '554'
+# url = f"rtsp://{USER}:{PASSWORD}@{IPADDRESS}:{PORT}/cam/realmonitor?channel=1&subtype=1"
+
 cap = cv2.VideoCapture(url)
 
 while True:
