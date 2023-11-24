@@ -1,0 +1,20 @@
+* Conda
+mkdir -p ~/miniconda3
+wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda3/miniconda.sh
+bash ~/miniconda3/miniconda.sh -b -u -p ~/miniconda3
+rm -rf ~/miniconda3/miniconda.sh
+
+~/miniconda3/bin/conda init bash
+~/miniconda3/bin/conda init zsh
+
+* Code
+Khi lần đầu triển khai cài đặt máy tính và camera, thay đổi các thông tin sau trong file info.json
+Thông tin mẫu:
+    "ip_edgecom": "10.10.10.63",
+    "ip_camera": "10.10.10.36",
+    "name_camera": "TLs - Ezviz36",
+    "user_camera": "admin",
+    "password_camera": "CHBAJT",
+    "port_camera": "554",
+    "channel_camera": "1",
+    "type_camera": "Ezviz",

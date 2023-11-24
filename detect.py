@@ -43,7 +43,7 @@ def clip_boxes(boxes, shape):
 
 
 # Load model
-def load_model(weights, device, data, source):
+def load_model(weights, device, data, source, pts):
     data = str(ROOT / data)
     weights = str(ROOT / weights)
     device = select_device(device)
@@ -51,12 +51,12 @@ def load_model(weights, device, data, source):
     model = DetectMultiBackend(weights, device=device, dnn=False, data=data, fp16=False)
     stride, names, pt = model.stride, model.names, model.pt
     imgsz = check_img_size(imgsz, s=stride)  # check image size
-    dataset = LoadImages(source, img_size=imgsz, stride=stride, auto=pt)
+    dataset = LoadImages(source, pts, img_size=imgsz, stride=stride, auto=pt)
     bs = 1  # batch_size
     return model, pt, bs, imgsz, dataset, device, names
 
 # Detect object
-def get_detected_object(weights, device, data, source):
+def get_detected_object(weights, device, data, source, pts):
     classified = []
     result = []
     messages = []
@@ -67,7 +67,7 @@ def get_detected_object(weights, device, data, source):
     classes = None # filter by class: --class 0, or --class 0 2 3
     agnostic_nms = False # class-agnostic NMS
 
-    model, pt, bs, imgsz, dataset, device, names = load_model(weights, device, data, source)
+    model, pt, bs, imgsz, dataset, device, names = load_model(weights, device, data, source, pts)
 
     # Run inference
     model.warmup(imgsz=(1 if pt or model.triton else bs, 3, *imgsz))  # warmup
@@ -126,7 +126,5 @@ def get_detected_object(weights, device, data, source):
                         'label': names[c]
                    }                 
                     classified.append(doc)
-    # Print results
-    t = tuple(x.t / seen * 1E3 for x in dt)  # speeds per image
-    LOGGER.info(f'Speed: %.1fms pre-process, %.1fms inference, %.1fms NMS per image at shape {(1, 3, *imgsz)}' % t)
+
     return classified, det, result, messages

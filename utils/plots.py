@@ -464,7 +464,7 @@ def convert_name_id(eng_name, option):
     
     return output
 
-def draw_bboxes(im, classified, det):
+def draw_object_bboxes(im, classified, det):
     image_h, image_w, _ = im.shape
     bbox_thick = int(0.6 * (image_h + image_w) / 600)
     cv2_im_rgb = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)# Convert the image to RGB (OpenCV uses BGR)
@@ -504,6 +504,24 @@ def draw_bboxes(im, classified, det):
     img = cv2.cvtColor(np.array(pil_im), cv2.COLOR_RGB2BGR)# Get back the image to OpenCV
 
     return img
+
+def draw_detect_bboxes(im, pts):
+    image_h, image_w, _ = im.shape
+    bbox_thick = int(0.6 * (image_h + image_w) / 600)
+    if len(pts) >= 4:    
+        cv2.polylines(im, np.array([pts], np.int32), True, (235, 84, 47), bbox_thick) # BGR
+    elif len(pts) == 2:
+        start_point = pts[0]
+        end_point = pts[1]
+        x0 = start_point[0]
+        y0 = start_point[1]
+        x1 = end_point[0]
+        y1 = end_point[1] 
+        cv2.rectangle(im, (x0, y0), (x1, y1), (235, 84, 47), bbox_thick) # BGR
+    elif len(pts) == 0:
+        pass
+
+    return im
 
 def information(classified):
     for i in range(len(classified)):

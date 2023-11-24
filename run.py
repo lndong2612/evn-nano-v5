@@ -1,5 +1,6 @@
 import os
 import sys 
+import signal
 WORKING_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(WORKING_DIR, "../"))
 import cv2
@@ -11,65 +12,88 @@ from config import settings
 from imutils.video import VideoStream
 from flask import Flask, jsonify, Response, request
 from flask_cors import CORS
-from utils.function import detect_method, health_check_nano
+from utils.function import detect_method, health_check_nano, get_information_from_server, update_frame_dimension, initialize_information_to_server
+
 
 # [logging config
 logging.basicConfig(format='%(asctime)s:%(levelname)s:%(filename)s:%(funcName)s:%(message)s',
                     datefmt='%Y-%m-%d %H:%M:%S',
                     level=logging.INFO)
 # logging config]
-
-output_fullsize = None
-output_resize = None
-lock = threading.Lock()
 device = '' # cuda device, i.e. 0 or 0,1,2,3 or cpu
 
+'''Send infomation to server first'''
 with open(os.path.join(os.getcwd(), 'info.json'), "r") as outfile:
     info_json = json.load(outfile)
+    IPCAM = info_json['ip_camera']
+    IPEDGECOM = info_json['ip_edgecom']
     USERCAM = info_json['user_camera']
     PASSWORDCAM = info_json['password_camera']
-    IPCAM = info_json['ip_camera']
     PORTCAM = info_json['port_camera']
     CHANNELCAM = info_json['channel_camera']
-    CROPRATE = info_json['crop_frame_rate']
-    IPEDGECOM = info_json['ip_edgecom']
-    CAMTYPE = info_json['camera_type']
+    CAMTYPE = info_json['type_camera']
+
+'''Check camera type to get URL'''
+if CAMTYPE == 'Dahua':
+    URL = f'rtsp://{USERCAM}:{PASSWORDCAM}@{IPCAM}:{PORTCAM}/cam/realmonitor?channel={CHANNELCAM}&subtype=1' # camera Dahua
+elif CAMTYPE == 'Ezviz':
+    URL = f'rtsp://{USERCAM}:{PASSWORDCAM}@{IPCAM}:{PORTCAM}/onvif{CHANNELCAM}' # camera Ezviz
 
 app = Flask(__name__)
 CORS(app)
-if CAMTYPE == "Dahua":
-    URL = f"rtsp://{USERCAM}:{PASSWORDCAM}@{IPCAM}:{PORTCAM}/cam/realmonitor?channel={CHANNELCAM}&subtype=1" # camera Dahua
-elif CAMTYPE == "Ezviz":
-    URL = f'rtsp://{USERCAM}:{PASSWORDCAM}@{IPCAM}:{PORTCAM}/onvif{CHANNELCAM}' # camera Ezviz
 
+
+'''Load frame from camera to get H and W'''
 cap = VideoStream(URL).start()
+frame = cap.read()
+height = frame.shape[0]
+width = frame.shape[1]
+update_frame_dimension(height, width) # Write H and W to json file
 
-time.sleep(10.0)
+'''Initialize the camera for the first time on the server with information from the json file'''
+with open(os.path.join(os.getcwd(), 'info.json'), "r") as outfile:
+    info_json = json.load(outfile)
+    initialize_information_to_server(info_json)
+
+'''Get information from server and update into json file'''
+get_information_from_server(IPCAM, IPEDGECOM, type_cam = True)
+
+time.sleep(5)
 
 @app.route('/')
 def index():
     return '[INFO] Running ...'
 
-def detect(info_json):
-    frame_num = 0
-    crop_rate = CROPRATE
-    while True:
-        frame = cap.read()
-        frame_num += 1
-        if frame_num % 10000 == 0:
-            health_check_nano(IPEDGECOM)
-        if frame_num % crop_rate == 0:
-           input_frame = frame.copy()
-           detect_method(input_frame, info_json, device)
 
+'''Detect object on input image'''
+def detect(ip_camera):
+    while True:
+        with open(os.path.join(os.getcwd(), 'info.json'), "r") as outfile:
+            info_json = json.load(outfile)
+            PTS = info_json['coordinate']
+            IDENTIFICATIONTIME = info_json['identification_time']        
+        frame = cap.read()
+        time.sleep(IDENTIFICATIONTIME)
+        named_tuple = time.localtime() 
+        time_string = time.strftime("%d-%m-%Y %H:%M:%S", named_tuple)
+        print(f"[INFO] Detect on {time_string}.")
+        detect_method(frame, ip_camera, device, PTS)
+
+
+'''Send health check camera to server'''
+def send_healthcheck(ip_edgecom):
+    while True:
+        time.sleep(60)
+        named_tuple = time.localtime() 
+        time_string = time.strftime("%d-%m-%Y %H:%M:%S", named_tuple)
+        print(f"[INFO] Sending health check notification on {time_string}.")   
+        health_check_nano(ip_edgecom)
+
+
+''' Read the camera frame'''
 def generate():
     while True:
-        ''' 
-        Read the camera frame
-        '''
-        frame = cap.read()
-        if output_resize is None:
-            continue        
+        frame = cap.read()      
         (flag, encodedImage) = cv2.imencode(".jpg", frame)
         # ensure the frame was successfully encoded
         if not flag:
@@ -78,11 +102,10 @@ def generate():
         yield(b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' + 
             bytearray(encodedImage) + b'\r\n')
 
+
+'''Read the camera resize frame'''
 def generate_resize():
     while True:
-        ''' 
-        Read the camera resize frame
-        '''
         frame = cap.read()
         frame_resize = cv2.resize(frame, (853, 480))
         (flag, encodedImage) = cv2.imencode(".jpg", frame_resize)
@@ -94,6 +117,12 @@ def generate_resize():
             bytearray(encodedImage) + b'\r\n')
 
 
+def handler():
+    res = input("[INFO] Ctrl-c was pressed. Do you really want to exit? y/n ")
+    if res == 'y' or res == 'Y':
+        exit(0)
+
+
 @app.route("/api/video_feed")
 def video_feed():
     # return the response generated along with the specific media
@@ -101,12 +130,14 @@ def video_feed():
     return Response(generate(),
         mimetype = "multipart/x-mixed-replace; boundary=frame")
 
+
 @app.route("/api/video_feed_resize")
 def video_feed_resize():
     # return the response generated along with the specific media
     # type (mime type)
     return Response(generate_resize(),
         mimetype = "multipart/x-mixed-replace; boundary=frame")
+
 
 @app.route('/api/download_model', methods=['POST'])
 def download():
@@ -119,6 +150,18 @@ def download():
         mess = '[INFO] Save model fail ...'
         return jsonify(status_code = 400, content={"success":"false", "error": str(error)})
 
+
+@app.route('/api/update_info', methods=['POST'])
+def update_info():
+    try:
+        get_information_from_server(IPCAM, IPEDGECOM, type_cam = False)
+        mess = '[INFO] Update information done!'
+        return jsonify(status_code = 200, content={'message':mess})
+    except SystemError as error:
+        mess = '[INFO] Update information fail ...'
+        return jsonify(status_code = 400, content={"success":"false", "error": str(error)})
+
+
 @app.route('/api/reboot', methods = ['GET'])
 def reboot():
     try:
@@ -129,18 +172,23 @@ def reboot():
         mess = '[INFO] System reboot fail ...'
         return jsonify(status_code = 400, content={"success":"false", "error": str(error)})
 
+
 if __name__ == "__main__":
-    # signal.signal(signal.SIGINT, handler)
-    
-    # start a thread that will perform object detection
-    p1 = threading.Thread(target=detect, args=(info_json,))
+    # Start a thread that will perform object detection, send health check camera and start flask server on Edge computer
+    p1 = threading.Thread(target=detect, args=(IPCAM, ))
     p1.daemon = True
     p1.start()
 
+    p2 = threading.Thread(target=send_healthcheck, args=(IPEDGECOM,))
+    p2.daemon = True
+    p2.start()
+
+    time.sleep(10)
+
     host = settings.HOST
     port = int(settings.PORT)
-    app.run(host=host, port=port, debug=settings.DEBUG)
-
+    app.run(host=host, port=port, debug=False)    
+    
 # release the video stream pointer
 cap.stop()
-exit(0)
+signal.signal(signal.SIGINT, handler)

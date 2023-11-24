@@ -7,7 +7,7 @@ import json
 import requests
 from config import settings
 from detect import get_detected_object
-from utils.plots import draw_bboxes
+from utils.plots import draw_object_bboxes, draw_detect_bboxes
 from config import settings
 
 # send notifications when unusual object was detected
@@ -26,8 +26,9 @@ def post_notification(data_send, info_system, messages):
 
         response = requests.request("POST", url, headers=headers, data=payload, files=files)
         print(response.text)
-    except:
+    except Exception as error:
         print("[INFO] Send notifications failed")
+        print('[INFO] Error: ', error)
         pass
 
 # send status of edge com
@@ -40,22 +41,24 @@ def health_check_nano(ip_edgecom):
         }
         response = requests.request("PUT", url, headers=headers, data=payload)
         print(response.text)
-    except:
+    except Exception as error:
         print("[INFO] Send health check failed")
+        print('[INFO] Error: ', error)
         pass
 
-def detect_method(image, info_system, device):
+def detect_method(image, info_system, device, pts):
     try:
         """Detect object on input image"""
         weight_path = os.path.join(settings.MODEL, 'best.pt') # model path
 
         input_image = '{}/original.jpg'.format(settings.IMAGE_FOLDER) # original image path
-        cv2.imwrite(input_image, image)# save original image
+        cv2.imwrite(input_image, image) # save original image
 
-        classified, det, result, messages = get_detected_object(weight_path, device, settings.DATA_COCO, input_image) # objects detection on image
+        classified, det, result, messages = get_detected_object(weight_path, device, settings.DATA_COCO, input_image, pts) # objects detection on image
 
         if len(det) != 0:
-            im_show = draw_bboxes(image, classified, det) # drawing bboxes on image
+            im_draw_detect_box = draw_detect_bboxes(image, pts) # drawing detect bboxes
+            im_show = draw_object_bboxes(im_draw_detect_box, classified, det) # drawing object bboxes
             output_image = '{}/detected.jpg'.format(settings.IMAGE_FOLDER)
             cv2.imwrite(output_image, im_show)
             
@@ -66,40 +69,99 @@ def detect_method(image, info_system, device):
                 'img_name' : 'detected.jpg',
                 'detected_image_path': output_image,
             }
-            print(status)
             try:
-                post_notification(status, info_system, messages)# send notification to server
+                post_notification(status, info_system, messages) # send notification to server
             except UnboundLocalError:
                 pass
      
         else:
             print('[INFO] Good!')
-
     except Exception as error:
-        print("[INFO] Detect object failed")
+        print("[INFO] Detect object failed.")
         print('[INFO] Error: ', error)
 
-def get_coor(ip_camera, ip_edcom):
-    url = f"https://tcameradev.thinklabs.com.vn/api/camera/getCameraByIp/{ip_camera}"
 
-    payload="{\r\n    \"jetson_ip_address\":\"" + f"{ip_edcom}" "\"\r\n}"
-    headers = {
-    'Content-Type': 'application/json'
-    }
+# Update information from server into json file
+def get_information_from_server(ip_camera, ip_edcom, type_cam):
+    try:
+        url = f"https://tcamera.thinklabs.com.vn/api/camera/getCameraByIp/{ip_camera}"
 
-    response = requests.request("GET", url, headers=headers, data=payload)
+        payload="{\r\n    \"jetson_ip_address\":\"" + f"{ip_edcom}" "\"\r\n}"
+        headers = {
+        'Content-Type': 'application/json'
+        }
 
-    info = response.text
-    res = json.loads(info)
-    coor_arr = []
-    for infomation in res['data']:
-        coor = infomation['detect_point']
-        coor_arr.append(coor)
+        response = requests.request("GET", url, headers=headers, data=payload)
 
-    entry = {'coordinate': coor_arr}
-    # info_update = {'coordinate':coor_arr}
-    with open(os.path.join(os.getcwd(), 'info.json'), "r+") as file:
-        file_data = json.load(file)
-        file_data.update(entry)
-        file.seek(0)
-        json.dump(file_data, file, indent = 4)
+        info = response.text
+        res = json.loads(info)
+        for information in res['data']:
+            coor = information['detect_point']
+            time_detect = information['identification_time']
+            brand_name = information['type_id']['brand']
+
+        json_file = open(os.path.join(os.getcwd(), 'info.json'), "r")
+        data = json.load(json_file)
+        json_file.close()
+        data['identification_time'] = time_detect
+
+        if type_cam == True:
+            data['type_camera'] = brand_name
+        else:
+            pass
+
+        data['coordinate'] = coor
+
+        # Save our changes to JSON file
+        json_file = open(os.path.join(os.getcwd(), 'info.json'), "w+")
+        json_file.write(json.dumps(data, indent = 5))
+        json_file.close()
+        print('[INFO] Update information from server done.')
+
+    except Exception as error:
+        print("[INFO] Update information from server failed.")
+        print('[INFO] Error: ', error)
+
+
+# Write H and W to json file
+def update_frame_dimension(height, width):
+    try:
+        json_file = open(os.path.join(os.getcwd(), 'info.json'), "r")
+        data = json.load(json_file)
+        json_file.close()
+        data['cam_height'] = height
+        data['cam_width'] = width
+
+        # Save our changes to JSON file
+        json_file = open(os.path.join(os.getcwd(), 'info.json'), "w+")
+        json_file.write(json.dumps(data, indent = 5))
+        json_file.close()
+        print("[INFO] Update frame dimension done.")
+
+    except Exception as error:
+        print("[INFO] Update frame dimension failed.")
+        print('[INFO] Error: ', error)        
+
+# Create new camera for the first time
+def initialize_information_to_server(info):
+    try:
+        NAMECAM = info['name_camera']
+        IPCAM = info['ip_camera']  
+        USERCAM = info['user_camera']
+        PASSWORDCAM = info['password_camera']
+        PORTCAM = info['port_camera']
+        IDENTIFICATIONTIME = info['identification_time']
+        HEIGHTCAM = info['cam_height']
+        WIDTHCAM = info['cam_width']
+
+        url = "https://tcamera.thinklabs.com.vn/api/camera"
+        payload="{\r\n    \"name\": \"" + f"{NAMECAM}" + "\",\r\n    \"ip_address\": \"" + f"{IPCAM}" + "\",\r\n    \"username\": \"" + f"{USERCAM}" + "\",\r\n    \"password\": \"" + f"{PASSWORDCAM}" + "\",\r\n    \"port\": \"" + f"{PORTCAM}" + "\",\r\n    \"cam_width\": \"" + f"{WIDTHCAM}" + "\",\r\n    \"cam_height\": \"" + f"{HEIGHTCAM}" + "\",\r\n    \"identification_time\": \"" + f"{IDENTIFICATIONTIME}" + "\",\r\n    \"status\": true\r\n}"
+        headers = {
+        'Content-Type': 'application/json'
+        }
+
+        response = requests.request("POST", url, headers=headers, data=payload)
+        print('[INFO] Create information on server done.')
+    except Exception as error:
+        print("[INFO] Create information on server failed.")
+        print('[INFO] Error: ', error)     

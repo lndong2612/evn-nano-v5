@@ -1,24 +1,14 @@
 {
-    "user_camera": "admin",
-    "password_camera": "CHBAJT",
-    "ip_camera": "10.10.10.100",
-    "port_camera": "554",
-    "channel_camera": "1",
-    "ip_edgecom": "10.10.10.90",
-    "crop_frame_rate": 20000,
-    "sim_card": "0988223344",
-    "id_edge_computer": "PE1000NXT1",
-    "camera_type": "Dahua",
-    "coordinate": [
-        [
-            [
-                218,
-                48
-            ],
-            [
-                1859,
-                826
-            ]
-        ]
-    ]
+     "ip_edgecom": "10.10.10.63",
+     "ip_camera": "10.10.10.36",
+     "name_camera": "TLs - Ezviz36",
+     "user_camera": "admin",
+     "password_camera": "CHBAJT",
+     "port_camera": "554",
+     "channel_camera": "1",
+     "type_camera": "Ezviz",
+     "identification_time": 60,
+     "cam_height": 1080,
+     "cam_width": 1920,
+     "coordinate": [[128,250],[430,520]]
 }
