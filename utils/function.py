@@ -6,9 +6,9 @@ import cv2
 import json
 import requests
 from config import settings
+from utils.general import LOGGER
 from detect import get_detected_object
 from utils.plots import draw_object_bboxes, draw_detect_bboxes
-from config import settings
 
 # send notifications when unusual object was detected
 def post_notification(data_send, info_system, messages):
@@ -25,10 +25,10 @@ def post_notification(data_send, info_system, messages):
         headers = {}
 
         response = requests.request("POST", url, headers=headers, data=payload, files=files)
-        print(response.text)
+        LOGGER.info(response.text)
     except Exception as error:
-        print("[INFO] Send notifications failed")
-        print('[INFO] Error: ', error)
+        LOGGER.info("[INFO] Send notifications failed")
+        LOGGER.info('[INFO] Error: ', error)
         pass
 
 # send status of edge com
@@ -40,10 +40,10 @@ def health_check_nano(ip_edgecom):
         'Content-Type': 'application/json'
         }
         response = requests.request("PUT", url, headers=headers, data=payload)
-        print(response.text)
+        LOGGER.info(response.text)
     except Exception as error:
-        print("[INFO] Send health check failed")
-        print('[INFO] Error: ', error)
+        LOGGER.info("[INFO] Send health check failed")
+        LOGGER.info('[INFO] Error: ', error)
         pass
 
 def detect_method(image, info_system, device, pts):
@@ -75,10 +75,10 @@ def detect_method(image, info_system, device, pts):
                 pass
      
         else:
-            print('[INFO] Good!')
+            LOGGER.info('[INFO] Good!')
     except Exception as error:
-        print("[INFO] Detect object failed.")
-        print('[INFO] Error: ', error)
+        LOGGER.info("[INFO] Detect object failed.")
+        LOGGER.info('[INFO] Error: ', error)
 
 
 # Update information from server into json file
@@ -116,11 +116,11 @@ def get_information_from_server(ip_camera, ip_edcom, type_cam):
         json_file = open(os.path.join(os.getcwd(), 'info.json'), "w+")
         json_file.write(json.dumps(data, indent = 5))
         json_file.close()
-        print('[INFO] Update information from server done.')
+        LOGGER.info('[INFO] Update information from server done.')
 
     except Exception as error:
-        print("[INFO] Update information from server failed.")
-        print('[INFO] Error: ', error)
+        LOGGER.info("[INFO] Update information from server failed.")
+        LOGGER.info('[INFO] Error: ', error)
 
 
 # Write H and W to json file
@@ -136,11 +136,11 @@ def update_frame_dimension(height, width):
         json_file = open(os.path.join(os.getcwd(), 'info.json'), "w+")
         json_file.write(json.dumps(data, indent = 5))
         json_file.close()
-        print("[INFO] Update frame dimension done.")
+        LOGGER.info("[INFO] Update frame dimension done.")
 
     except Exception as error:
-        print("[INFO] Update frame dimension failed.")
-        print('[INFO] Error: ', error)        
+        LOGGER.info("[INFO] Update frame dimension failed.")
+        LOGGER.info('[INFO] Error: ', error)        
 
 # Create new camera for the first time
 def initialize_information_to_server(info):
@@ -161,7 +161,7 @@ def initialize_information_to_server(info):
         }
 
         response = requests.request("POST", url, headers=headers, data=payload)
-        print('[INFO] Create information on server done.')
+        LOGGER.info('[INFO] Create information on server done.')
     except Exception as error:
-        print("[INFO] Create information on server failed.")
-        print('[INFO] Error: ', error)     
+        LOGGER.info("[INFO] Create information on server failed.")
+        LOGGER.info('[INFO] Error: ', error)     

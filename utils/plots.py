@@ -508,7 +508,7 @@ def draw_object_bboxes(im, classified, det):
 def draw_detect_bboxes(im, pts):
     image_h, image_w, _ = im.shape
     bbox_thick = int(0.6 * (image_h + image_w) / 600)
-    if len(pts) >= 4:    
+    if len(pts) >= 3:    
         cv2.polylines(im, np.array([pts], np.int32), True, (235, 84, 47), bbox_thick) # BGR
     elif len(pts) == 2:
         start_point = pts[0]

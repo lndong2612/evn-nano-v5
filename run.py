@@ -9,9 +9,10 @@ import time
 import logging
 import threading
 from config import settings
+from flask_cors import CORS
+from utils.general import LOGGER
 from imutils.video import VideoStream
 from flask import Flask, jsonify, Response, request
-from flask_cors import CORS
 from utils.function import detect_method, health_check_nano, get_information_from_server, update_frame_dimension, initialize_information_to_server
 
 
@@ -76,7 +77,7 @@ def detect(ip_camera):
         time.sleep(IDENTIFICATIONTIME)
         named_tuple = time.localtime() 
         time_string = time.strftime("%d-%m-%Y %H:%M:%S", named_tuple)
-        print(f"[INFO] Detect on {time_string}.")
+        LOGGER.info(f"[INFO] Detect on {time_string}.")
         detect_method(frame, ip_camera, device, PTS)
 
 
@@ -86,7 +87,7 @@ def send_healthcheck(ip_edgecom):
         time.sleep(60)
         named_tuple = time.localtime() 
         time_string = time.strftime("%d-%m-%Y %H:%M:%S", named_tuple)
-        print(f"[INFO] Sending health check notification on {time_string}.")   
+        LOGGER.info(f"[INFO] Sending health check notification on {time_string}.")   
         health_check_nano(ip_edgecom)
 
 

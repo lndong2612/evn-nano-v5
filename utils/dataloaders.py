@@ -284,6 +284,8 @@ class LoadImages:
         # Read image
         self.count += 1
         img0 = cv2.imread(path)  # BGR
+        assert img0 is not None, f'Image Not Found {path}'
+        s = f'image {self.count}/{self.nf} {path}: '
 
         # Detect on polygon
         if len(self.pts) >= 3:
@@ -291,12 +293,8 @@ class LoadImages:
             pts1 = np.array(self.pts, np.int32)
             mask = cv2.fillPoly(mask, [pts1], (255, 255, 255))
             fg = cv2.bitwise_and(img0, img0, mask=mask)
-            
-            assert img0 is not None, f'Image Not Found {path}'
-            s = f'image {self.count}/{self.nf} {path}: '
             if self.transforms:
                 img = self.transforms(fg)  # transforms
-
             else:
                 img = letterbox(fg, self.img_size, stride=self.stride, auto=self.auto)[0] # Padded resize
                 # Convert
@@ -317,10 +315,6 @@ class LoadImages:
             pts1 = np.array(PTSRECTANGLE, np.int32)
             mask = cv2.fillPoly(mask, [pts1], (255, 255, 255))
             fg = cv2.bitwise_and(img0, img0, mask=mask)
-
-            assert img0 is not None, f'Image Not Found {path}'
-            s = f'image {self.count}/{self.nf} {path}: '
-
             if self.transforms:
                 img = self.transforms(fg)  # transforms
             else:
@@ -330,12 +324,6 @@ class LoadImages:
 
         # Detect on full frame
         else:
-            # Read image
-            # self.count += 1
-            # im0 = cv2.imread(path)  # BGR
-            assert img0 is not None, f'Image Not Found {path}'
-            s = f'image {self.count}/{self.nf} {path}: '
-            
             if self.transforms:
                 img = self.transforms(img0)  # transforms
             else:
