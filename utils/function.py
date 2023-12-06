@@ -4,6 +4,7 @@ WORKING_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(WORKING_DIR, "../"))
 import cv2
 import json
+import time
 import requests
 from config import settings
 from utils.general import LOGGER
@@ -58,9 +59,15 @@ def detect_method(image, info_system, device, pts):
 
         if len(det) != 0:
             im_draw_detect_box = draw_detect_bboxes(image, pts) # drawing detect bboxes
-            im_show = draw_object_bboxes(im_draw_detect_box, classified, det) # drawing object bboxes
+            im_show = draw_object_bboxes(im_draw_detect_box, classified) # drawing object bboxes
             output_image = '{}/detected.jpg'.format(settings.IMAGE_FOLDER)
             cv2.imwrite(output_image, im_show)
+
+            # save image to use for train
+            time_tuple = time.localtime()
+            time_string = time.strftime('%Y%m%d_%H%M%S', time_tuple)
+            data_image = '{}/{}.jpg'.format(settings.DATA_IMAGE_FOLDER, time_string)
+            cv2.imwrite(data_image, im_show)      
             
             # get infomation
             status = {

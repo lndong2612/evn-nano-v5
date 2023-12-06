@@ -8,11 +8,13 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/detect_object"
     RESOURCES: str = './resources'
     IMAGE_FOLDER: str = os.path.join(RESOURCES, 'images')
+    DATA_IMAGE_FOLDER: str = os.path.join(RESOURCES, 'data')
     MODEL: str = os.path.join(RESOURCES, 'weight_init')
     DATA_COCO: str = './data/coco.yaml'
 
 settings = Settings()
 settings.IMAGE_FOLDER: str = os.path.join(settings.RESOURCES, 'images')
+settings.DATA_IMAGE_FOLDER: str = os.path.join(settings.RESOURCES, 'data')
 settings.MODEL: str = os.path.join(settings.RESOURCES, 'weight_init')
 settings.DATA_COCO: str = settings.DATA_COCO
 settings.URLSV: str = settings.URLSV
