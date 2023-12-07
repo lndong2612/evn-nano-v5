@@ -93,29 +93,40 @@ def send_healthcheck(ip_edgecom):
 
 ''' Read the camera frame'''
 def generate():
+    frame_rate = 1 # Frame per second
+    prev = 0 # Previous frame time    
     while True:
-        frame = cap.read()      
-        (flag, encodedImage) = cv2.imencode(".jpg", frame)
-        # ensure the frame was successfully encoded
-        if not flag:
-            continue
-        # yield the output frame in the byte format
-        yield(b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' + 
-            bytearray(encodedImage) + b'\r\n')
+        time_elapsed = time.time() - prev
+        frame = cap.read()
+        if time_elapsed > 1./frame_rate:
+            prev = time.time()        
+            (flag, encodedImage) = cv2.imencode(".jpg", frame)
+            # ensure the frame was successfully encoded
+            if not flag:
+                continue
+            # yield the output frame in the byte format
+            yield(b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' + 
+                bytearray(encodedImage) + b'\r\n')
+        
 
 
 '''Read the camera resize frame'''
 def generate_resize():
+    frame_rate = 1 # Frame per second
+    prev = 0 # Previous frame time       
     while True:
+        time_elapsed = time.time() - prev
         frame = cap.read()
-        frame_resize = cv2.resize(frame, (853, 480))
-        (flag, encodedImage) = cv2.imencode(".jpg", frame_resize)
-        # ensure the frame was successfully encoded
-        if not flag:
-            continue
-        # yield the output frame in the byte format
-        yield(b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' + 
-            bytearray(encodedImage) + b'\r\n')
+        if time_elapsed > 1./frame_rate:
+            prev = time.time()     
+            frame_resize = cv2.resize(frame, (853, 480))
+            (flag, encodedImage) = cv2.imencode(".jpg", frame_resize)
+            # ensure the frame was successfully encoded
+            if not flag:
+                continue
+            # yield the output frame in the byte format
+            yield(b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' + 
+                bytearray(encodedImage) + b'\r\n')
 
 
 def handler():
