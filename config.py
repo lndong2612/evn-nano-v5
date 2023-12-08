@@ -4,7 +4,7 @@ from pydantic import BaseSettings
 class Settings(BaseSettings):
     HOST: str = '0.0.0.0'
     PORT: int = 9298
-    URLSV = 'https://tcameradev.thinklabs.com.vn/api'
+    URLSV = 'https://tcamera.thinklabs.com.vn/api'
     API_V1_STR: str = "/detect_object"
     RESOURCES: str = './resources'
     IMAGE_FOLDER: str = os.path.join(RESOURCES, 'images')

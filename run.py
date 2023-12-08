@@ -10,11 +10,12 @@ import logging
 import threading
 from config import settings
 from flask_cors import CORS
-from utils.general import LOGGER
 from imutils.video import VideoStream
 from flask import Flask, jsonify, Response, request
-from utils.function import detect_method, health_check_nano, get_information_from_server, update_frame_dimension, initialize_information_to_server
+from utils.function import detect_method, health_check_nano, get_information_from_server, update_frame_dimension, initialize_information_to_server, \
+                            checking_internet
 
+print("[INFO] Run module AI ...")
 
 # [logging config
 logging.basicConfig(format='%(asctime)s:%(levelname)s:%(filename)s:%(funcName)s:%(message)s',
@@ -22,6 +23,18 @@ logging.basicConfig(format='%(asctime)s:%(levelname)s:%(filename)s:%(funcName)s:
                     level=logging.INFO)
 # logging config]
 device = '' # cuda device, i.e. 0 or 0,1,2,3 or cpu
+
+
+time.sleep(30)
+'''Open network on sim 4G '''
+print("[INFO] Open Sim 4G network ...")
+cmd = 'sudo ifmetric wwan0 50'
+os.system(cmd)
+
+
+'''Check internet available or not'''
+checking_internet()
+
 
 '''Send infomation to server first'''
 with open(os.path.join(os.getcwd(), 'info.json'), "r") as outfile:
@@ -34,11 +47,13 @@ with open(os.path.join(os.getcwd(), 'info.json'), "r") as outfile:
     CHANNELCAM = info_json['channel_camera']
     CAMTYPE = info_json['type_camera']
 
+
 '''Check camera type to get URL'''
 if CAMTYPE == 'Dahua':
     URL = f'rtsp://{USERCAM}:{PASSWORDCAM}@{IPCAM}:{PORTCAM}/cam/realmonitor?channel={CHANNELCAM}&subtype=1' # camera Dahua
 elif CAMTYPE == 'Ezviz':
     URL = f'rtsp://{USERCAM}:{PASSWORDCAM}@{IPCAM}:{PORTCAM}/onvif{CHANNELCAM}' # camera Ezviz
+
 
 app = Flask(__name__)
 CORS(app)
@@ -51,15 +66,19 @@ height = frame.shape[0]
 width = frame.shape[1]
 update_frame_dimension(height, width) # Write H and W to json file
 
+
 '''Initialize the camera for the first time on the server with information from the json file'''
 with open(os.path.join(os.getcwd(), 'info.json'), "r") as outfile:
     info_json = json.load(outfile)
     initialize_information_to_server(info_json)
 
+
 '''Get information from server and update into json file'''
 get_information_from_server(IPCAM, IPEDGECOM, type_cam = True)
 
+
 time.sleep(5)
+
 
 @app.route('/')
 def index():
@@ -77,7 +96,7 @@ def detect(ip_camera):
         time.sleep(IDENTIFICATIONTIME)
         named_tuple = time.localtime() 
         time_string = time.strftime("%d-%m-%Y %H:%M:%S", named_tuple)
-        LOGGER.info(f"[INFO] Detect on {time_string}.")
+        print(f"[INFO] Detect on {time_string}.")
         detect_method(frame, ip_camera, device, PTS)
 
 
@@ -87,7 +106,7 @@ def send_healthcheck(ip_edgecom):
         time.sleep(60)
         named_tuple = time.localtime() 
         time_string = time.strftime("%d-%m-%Y %H:%M:%S", named_tuple)
-        LOGGER.info(f"[INFO] Sending health check notification on {time_string}.")   
+        print(f"[INFO] Sending health check notification on {time_string}.")  
         health_check_nano(ip_edgecom)
 
 
