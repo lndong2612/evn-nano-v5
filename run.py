@@ -9,28 +9,38 @@ import time
 import threading
 from config import settings
 from flask_cors import CORS
+from datetime import datetime
 from imutils.video import VideoStream
 from flask import Flask, jsonify, Response, request
-from utils.function import detect_method, health_check_nano, get_information_from_server, update_frame_dimension, initialize_information_to_server, \
-                            checking_internet
+from utils.function import detect_method, health_check_nano, get_information_from_server, update_frame_dimension, initialize_information_to_server, checking_internet
 
 
 print("[INFO] Run module AI ...")
+now = datetime.now()
+dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
+print("[INFO] Date and time computer start: ", dt_string)
 
 
-device = '' # cuda device, i.e. 0 or 0,1,2,3 or cpu
+''' cuda device, i.e. 0 or 0,1,2,3 or cpu'''
+device = '' 
 
 
 time.sleep(30)
 '''Open network on sim 4G '''
 print("[INFO] Open Sim 4G network ...")
-cmd = 'sudo ifmetric wwan0 50'
+cmd_enable_sim = 'sudo ifmetric wwan0 50'
 try:
-    os.system(cmd)
+    os.system(cmd_enable_sim)
     print("[INFO] Done!!")
 except:
     print("[INFO] Already open!!")
     pass
+
+
+'''Auto reboot computer at 5AM '''
+print("[INFO] Time to reboot computer ...")
+cmd_auto_reboot = 'shutdown -r 05:00'
+os.system(cmd_enable_sim)
 
 
 '''Check internet available or not'''
