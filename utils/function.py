@@ -6,18 +6,19 @@ import cv2
 import json
 import time
 import requests
+import traceback
 from config import settings
 from detect import get_detected_object
 from utils.plots import draw_object_bboxes, draw_detect_bboxes
 
 # send notifications when unusual object was detected
-def post_notification(data_send, info_system, messages):
+def post_notification(data_send, ip_camera, messages):
     try:
         result = ', '.join(messages)
         url = f"{settings.URLSV}/warning"
         payload={'content': result,
         'object': data_send['objects'],
-        'camera_ip': info_system['ip_camera'],
+        'camera_ip': ip_camera,
         'confirm_status': 'CHUA_XAC_NHAN'}
         files=[
             ('file',(data_send['img_name'],open(data_send['detected_image_path'],'rb'),'image/jpeg'))
@@ -26,9 +27,10 @@ def post_notification(data_send, info_system, messages):
 
         response = requests.request("POST", url, headers=headers, data=payload, files=files)
         print(response.text)
-    except Exception as error:
+    except:
         print("[INFO] Send notifications failed")
-        print('[INFO] Error: ', error)
+        print('[INFO] Error:')
+        traceback.print_exc() 
         pass
 
 # send status of edge com
@@ -41,12 +43,13 @@ def health_check_nano(ip_edgecom):
         }
         response = requests.request("PUT", url, headers=headers, data=payload)
         print(response.text)
-    except Exception as error:
+    except:
         print("[INFO] Send health check failed")
-        print('[INFO] Error: ', error)
+        print('[INFO] Error:')
+        traceback.print_exc() 
         pass
 
-def detect_method(image, info_system, device, pts):
+def detect_method(image, ip_camera, device, pts):
     try:
         """Detect object on input image"""
         weight_path = os.path.join(settings.MODEL, 'best.pt') # model path
@@ -76,15 +79,16 @@ def detect_method(image, info_system, device, pts):
                 'detected_image_path': output_image,
             }
             try:
-                post_notification(status, info_system, messages) # send notification to server
+                post_notification(status, ip_camera, messages) # send notification to server
             except UnboundLocalError:
                 pass
      
         else:
             print('[INFO] Good!')
-    except Exception as error:
+    except:
         print("[INFO] Detect object failed.")
-        print('[INFO] Error: ', error)
+        print('[INFO] Error:')
+        traceback.print_exc() 
 
 
 # Update information from server into json file
@@ -124,9 +128,10 @@ def get_information_from_server(ip_camera, ip_edcom, type_cam):
         json_file.close()
         print('[INFO] Update information from server done.')
 
-    except Exception as error:
+    except:
         print("[INFO] Update information from server failed.")
-        print('[INFO] Error: ', error)
+        print('[INFO] Error:')
+        traceback.print_exc() 
 
 
 # Write H and W to json file
@@ -144,9 +149,10 @@ def update_frame_dimension(height, width):
         json_file.close()
         print("[INFO] Update frame dimension done.")
 
-    except Exception as error:
+    except:
         print("[INFO] Update frame dimension failed.")
-        print('[INFO] Error: ', error)        
+        print('[INFO] Error:')
+        traceback.print_exc()      
 
 # Create new camera for the first time
 def initialize_information_to_server(info):
@@ -168,9 +174,10 @@ def initialize_information_to_server(info):
 
         response = requests.request("POST", url, headers=headers, data=payload)
         print('[INFO] Create information on server done.')
-    except Exception as error:
+    except:
         print("[INFO] Create information on server failed.")
-        print('[INFO] Error: ', error)
+        print('[INFO] Error:')
+        traceback.print_exc()
 
 # Ping to check internet
 def checking_internet():

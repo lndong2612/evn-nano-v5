@@ -6,7 +6,6 @@ sys.path.append(os.path.join(WORKING_DIR, "../"))
 import cv2
 import json
 import time
-import logging
 import threading
 from config import settings
 from flask_cors import CORS
@@ -15,13 +14,10 @@ from flask import Flask, jsonify, Response, request
 from utils.function import detect_method, health_check_nano, get_information_from_server, update_frame_dimension, initialize_information_to_server, \
                             checking_internet
 
+
 print("[INFO] Run module AI ...")
 
-# [logging config
-logging.basicConfig(format='%(asctime)s:%(levelname)s:%(filename)s:%(funcName)s:%(message)s',
-                    datefmt='%Y-%m-%d %H:%M:%S',
-                    level=logging.INFO)
-# logging config]
+
 device = '' # cuda device, i.e. 0 or 0,1,2,3 or cpu
 
 
@@ -29,10 +25,16 @@ time.sleep(30)
 '''Open network on sim 4G '''
 print("[INFO] Open Sim 4G network ...")
 cmd = 'sudo ifmetric wwan0 50'
-os.system(cmd)
+try:
+    os.system(cmd)
+    print("[INFO] Done!!")
+except:
+    print("[INFO] Already open!!")
+    pass
 
 
 '''Check internet available or not'''
+print("[INFO] Checking internet ...")
 checking_internet()
 
 
