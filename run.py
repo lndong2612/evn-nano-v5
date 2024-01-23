@@ -12,7 +12,8 @@ from flask_cors import CORS
 from datetime import datetime
 from imutils.video import VideoStream
 from flask import Flask, jsonify, Response, request
-from utils.function import detect_method, health_check_nano, get_information_from_server, update_frame_dimension, initialize_information_to_server, checking_internet
+from utils.function import (detect_method, health_check_nano, get_information_from_server , 
+                            update_frame_dimension, initialize_information_to_server, checking_internet)
 
 
 print("[INFO] Run module AI ...")
@@ -32,7 +33,7 @@ cmd_enable_sim = 'sudo ifmetric wwan0 50'
 try:
     os.system(cmd_enable_sim)
     print("[INFO] Done!!")
-except:
+except Exception as e:
     print("[INFO] Already open!!")
     pass
 
@@ -40,7 +41,7 @@ except:
 '''Auto reboot computer at 5AM '''
 print("[INFO] Time to reboot computer ...")
 cmd_auto_reboot = 'shutdown -r 05:00'
-os.system(cmd_enable_sim)
+os.system(cmd_auto_reboot)
 
 
 '''Check internet available or not'''
@@ -61,7 +62,7 @@ with open(os.path.join(os.getcwd(), 'info.json'), "r") as outfile:
 
 
 '''Check camera type to get URL'''
-if CAMTYPE == 'Dahua':
+if CAMTYPE == 'Dahua' or CAMTYPE == 'HIK':
     URL = f'rtsp://{USERCAM}:{PASSWORDCAM}@{IPCAM}:{PORTCAM}/cam/realmonitor?channel={CHANNELCAM}&subtype=1' # camera Dahua
 elif CAMTYPE == 'Ezviz':
     URL = f'rtsp://{USERCAM}:{PASSWORDCAM}@{IPCAM}:{PORTCAM}/onvif{CHANNELCAM}' # camera Ezviz

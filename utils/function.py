@@ -9,6 +9,7 @@ import requests
 import traceback
 from config import settings
 from detect import get_detected_object
+from urllib.request import urlopen as url
 from utils.plots import draw_object_bboxes, draw_detect_bboxes
 
 # send notifications when unusual object was detected
@@ -69,7 +70,7 @@ def detect_method(image, ip_camera, device, pts):
             time_tuple = time.localtime()
             time_string = time.strftime('%Y%m%d_%H%M%S', time_tuple)
             data_image = '{}/{}.jpg'.format(settings.DATA_IMAGE_FOLDER, time_string)
-            cv2.imwrite(data_image, im_show)      
+            cv2.imwrite(data_image, im_show)
             
             # get infomation
             status = {
@@ -181,13 +182,18 @@ def initialize_information_to_server(info):
 
 # Ping to check internet
 def checking_internet():
-    hostname = "8.8.8.8"
-    
+    status = ''
     while(True):
-        packetloss = os.system("ping " + hostname)
-        if packetloss == 0:
-            print('[INFO] Connect internet successful!')
+        try:
+            url('https://google.com.vn/', timeout=3)
+            status = True
+        except Exception as e:
+            status = False
+        
+        if status == True:
+            print('[INFO] Internet is available.')
             break
         else:
-            print('[INFO] Connect internet unsuccessful. Continue ...')
+            print('[INFO] Internet is not available.')
+            time.sleep(5)
             continue
