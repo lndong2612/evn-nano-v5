@@ -464,9 +464,9 @@ def convert_name_id(eng_name, option):
     
     return output
 
-def draw_bboxes(im, classified, det):
+def draw_object_bboxes(im, classified):
     image_h, image_w, _ = im.shape
-    bbox_thick = int(0.6 * (image_h + image_w) / 600)
+    bbox_thick = int(0.6 * (image_h + image_w) / 400)
     cv2_im_rgb = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)# Convert the image to RGB (OpenCV uses BGR)
     pil_im = Image.fromarray(cv2_im_rgb)# Transform the cv2 image to PIL    
     font_object = ImageFont.truetype("arial.ttf", 18, encoding="unic")# Use a truetype font    
@@ -481,7 +481,7 @@ def draw_bboxes(im, classified, det):
         ymax = info['ymax']
         ID = convert_name_id(info['label'], 'ID')
         c1, c2 = (xmin, ymin), (xmax, ymax)
-        draw.rectangle([c1, c2], outline = bbox_color[ID], width = 2)# Draw bbox on image
+        draw.rectangle([c1, c2], outline = bbox_color[ID], width = bbox_thick)# Draw bbox on image
 
     # Draw bbox on input image
     for info in classified:
@@ -491,8 +491,9 @@ def draw_bboxes(im, classified, det):
         ymax = info['ymax']
         ID = convert_name_id(info['label'], 'ID')
         c1, c2 = (xmin, ymin), (xmax, ymax)
-        bbox_mess = '%s - %s' % (convert_name_id(info['label'], 'length_name'), info['score'])
-        final_bbox_mess = '%s - %s' % (convert_name_id(info['label'], 'vietnamese_name'), info['score'])
+        object_score = float(info['score'])*100
+        bbox_mess = '%s - %s' % (convert_name_id(info['label'], 'length_name'), int(object_score)) + '%'
+        final_bbox_mess = '%s - %s' % (convert_name_id(info['label'], 'vietnamese_name'), int(object_score)) + '%'
         t_size = cv2.getTextSize(bbox_mess, 0, 0.5, thickness=bbox_thick // 2)[0]
         if ymin <= 10:
             draw.rectangle([(xmin, ymax), (xmin + t_size[0], ymax + 2*t_size[1])], fill = bbox_color[ID])# fill
@@ -504,6 +505,24 @@ def draw_bboxes(im, classified, det):
     img = cv2.cvtColor(np.array(pil_im), cv2.COLOR_RGB2BGR)# Get back the image to OpenCV
 
     return img
+
+def draw_detect_bboxes(im, pts):
+    image_h, image_w, _ = im.shape
+    bbox_thick = int(0.6 * (image_h + image_w) / 600)
+    if len(pts) >= 3:    
+        cv2.polylines(im, np.array([pts], np.int32), True, (235, 84, 47), bbox_thick) # BGR
+    elif len(pts) == 2:
+        start_point = pts[0]
+        end_point = pts[1]
+        x0 = start_point[0]
+        y0 = start_point[1]
+        x1 = end_point[0]
+        y1 = end_point[1] 
+        cv2.rectangle(im, (x0, y0), (x1, y1), (235, 84, 47), bbox_thick) # BGR
+    elif len(pts) == 0:
+        pass
+
+    return im
 
 def information(classified):
     for i in range(len(classified)):

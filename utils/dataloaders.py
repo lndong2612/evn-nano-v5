@@ -238,9 +238,7 @@ class LoadScreenshots:
 
 class LoadImages:
     # YOLOv5 image/video dataloader, i.e. `python detect.py --source image.jpg/vid.mp4`
-    def __init__(self, path, img_size=640, stride=32, auto=True, transforms=None, vid_stride=1):
-        if isinstance(path, str) and Path(path).suffix == '.txt':  # *.txt file with img/vid/dir on each line
-            path = Path(path).read_text().rsplit()
+    def __init__(self, path, pts, img_size=640, stride=32, auto=True, transforms=None, vid_stride=1):
         files = []
         for p in sorted(path) if isinstance(path, (list, tuple)) else [path]:
             p = str(Path(p).resolve())
@@ -252,11 +250,12 @@ class LoadImages:
                 files.append(p)  # files
             else:
                 raise FileNotFoundError(f'{p} does not exist')
-
+        print(files)
         images = [x for x in files if x.split('.')[-1].lower() in IMG_FORMATS]
         videos = [x for x in files if x.split('.')[-1].lower() in VID_FORMATS]
         ni, nv = len(images), len(videos)
 
+        self.pts = pts
         self.img_size = img_size
         self.stride = stride
         self.files = images + videos
@@ -265,7 +264,7 @@ class LoadImages:
         self.mode = 'image'
         self.auto = auto
         self.transforms = transforms  # optional
-        self.vid_stride = vid_stride  # video frame-rate stride
+        self.vid_stride = vid_stride  # video frame-rate stride        
         if any(videos):
             self._new_video(videos[0])  # new video
         else:
@@ -282,40 +281,57 @@ class LoadImages:
             raise StopIteration
         path = self.files[self.count]
 
-        if self.video_flag[self.count]:
-            # Read video
-            self.mode = 'video'
-            for _ in range(self.vid_stride):
-                self.cap.grab()
-            ret_val, im0 = self.cap.retrieve()
-            while not ret_val:
-                self.count += 1
-                self.cap.release()
-                if self.count == self.nf:  # last video
-                    raise StopIteration
-                path = self.files[self.count]
-                self._new_video(path)
-                ret_val, im0 = self.cap.read()
+        # Read image
+        self.count += 1
+        img0 = cv2.imread(path)  # BGR
+        assert img0 is not None, f'Image Not Found {path}'
+        s = f'image {self.count}/{self.nf} {path}: '
 
-            self.frame += 1
-            # im0 = self._cv2_rotate(im0)  # for use if cv2 autorotation is False
-            s = f'video {self.count + 1}/{self.nf} ({self.frame}/{self.frames}) {path}: '
+        # Detect on polygon
+        if len(self.pts) >= 3:
+            mask = np.zeros(img0.shape[0:2], dtype='uint8')
+            pts1 = np.array(self.pts, np.int32)
+            mask = cv2.fillPoly(mask, [pts1], (255, 255, 255))
+            fg = cv2.bitwise_and(img0, img0, mask=mask)
+            if self.transforms:
+                img = self.transforms(fg)  # transforms
+            else:
+                img = letterbox(fg, self.img_size, stride=self.stride, auto=self.auto)[0] # Padded resize
+                # Convert
+                img = img.transpose((2, 0, 1))[::-1]  # HWC to CHW, BGR to RGB
+                img = np.ascontiguousarray(img) # contiguous                    
+        
+        # Detect on rectangle
+        elif len(self.pts) == 2:
+            PTS = self.pts
+            start_point = PTS[0]
+            end_point = PTS[1]
+            x0 = start_point[0]
+            y0 = start_point[1]
+            x1 = end_point[0]
+            y1 = end_point[1]
+            PTSRECTANGLE = [[x0, y0], [x1, y0], [x1, y1], [x0, y1]]
+            mask = np.zeros(img0.shape[0:2], dtype='uint8')
+            pts1 = np.array(PTSRECTANGLE, np.int32)
+            mask = cv2.fillPoly(mask, [pts1], (255, 255, 255))
+            fg = cv2.bitwise_and(img0, img0, mask=mask)
+            if self.transforms:
+                img = self.transforms(fg)  # transforms
+            else:
+                img = letterbox(fg, self.img_size, stride=self.stride, auto=self.auto)[0]  # padded resize
+                img = img.transpose((2, 0, 1))[::-1]  # HWC to CHW, BGR to RGB
+                img = np.ascontiguousarray(img)  # contiguous    
 
+        # Detect on full frame
         else:
-            # Read image
-            self.count += 1
-            im0 = cv2.imread(path)  # BGR
-            assert im0 is not None, f'Image Not Found {path}'
-            s = f'image {self.count}/{self.nf} {path}: '
+            if self.transforms:
+                img = self.transforms(img0)  # transforms
+            else:
+                img = letterbox(img0, self.img_size, stride=self.stride, auto=self.auto)[0]  # padded resize
+                img = img.transpose((2, 0, 1))[::-1]  # HWC to CHW, BGR to RGB
+                img = np.ascontiguousarray(img)  # contiguous
 
-        if self.transforms:
-            im = self.transforms(im0)  # transforms
-        else:
-            im = letterbox(im0, self.img_size, stride=self.stride, auto=self.auto)[0]  # padded resize
-            im = im.transpose((2, 0, 1))[::-1]  # HWC to CHW, BGR to RGB
-            im = np.ascontiguousarray(im)  # contiguous
-
-        return path, im, im0, self.cap, s
+        return path, img, img0, self.cap, s
 
     def _new_video(self, path):
         # Create a new video capture object

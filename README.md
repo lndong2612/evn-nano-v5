@@ -47,40 +47,54 @@ To request an Enterprise License please complete the form at [Ultralytics Licens
     <img src="https://github.com/ultralytics/assets/blob/main/social/logo-social-discord.png" width="2%" alt="" /></a>
 </div>
 
-In this repository, i will using yolov5 to detect the skin disense with the input is an image and the output is a dict contain xmax, ymax, xmin, ymin, score and label of disense.
-
 </div>
 <br>
 
-## <div align="left">Install</div>
+# <div align="left">Giới thiệu</div>
+Hệ thống cảnh báo bất thường trên hành lang truyền tải điện. Sử dụng máy tính biên PE1000N Jetson Nano lắp sim 4G, kết nối hình ảnh với camera ip thông qua mạng LAN. Mô hình nhận dạng bất thường sử dụng YOLOV5.
 
-1. Create and activate a virtual environment:
+# <div align="left">Cài đặt</div>
 
-    ```sh
-    (base)$ conda create -n evn python=3.8
-    (base)$ conda activate evn
-    (base)$ cd evn-nano-v5
-    ```
-  
-2. Install the requirements:
+## <div align="left">Thẻ nhớ ngoài</div>
+Thẻ nhớ ngoài microSD để tăng kích thước lưu trữ, do máy tính biên dung lượng mặc định thấp.
 
-    ```sh
-    (env)$ cd evn-nano-v5
-    (env)$ pip install -r requirements.txt
-    ```
-
-3. Run
-
-    ```sh
-    (env)$ python run.py
-    ```
-
-In this an example result when camera catch an unusual object.
-
-[{'xmin': 279, 'ymin': 344, 'xmax': 627, 'ymax': 565, 'score': '0.62', 'label': 'Fire'}, {'xmin': 0, 'ymin': 0, 'xmax': 1200, 'ymax': 603, 'score': '0.84', 'label': 'Smoke'}]
+1. Mở Disk Manager để đảm bảo thẻ đã trống. Nếu chưa trống thì fomat thẻ, chọn định dạng chung với mọi dòng máy.
 
 <div align="center">
-  <p>
-    <img width="90%" src="./resources/background/detected.jpg"></a>
-  </p>
+<p><img width="90%" src="./resources/background/microsd-fomat.jpg"></a></p>
+<div align="left">
 
+2. Tải, giải nén và copy initrd vào /boot của máy. <a href="https://drive.google.com/file/d/1gqImB_vn5pNrieii2KmhfCR_mn7NJd6h/view?usp=sharing">Link tải</a>. Sau khi tải thì sẽ nằm trong thư mục /Downloads. Chạy các lệnh sau:
+
+    ```sh
+    sudo unzip /home/xxx/Downloads/initrd_230707.zip
+    sudo cp /home/xxx/Downloads/initrd_230707 /boot/initrd
+    ```
+
+3. Reboot máy
+
+4. Sau khi reboot máy, khi khởi động lại máy sẽ hiển thị một màn hình có dạng tương tự dưới đây để chọn thẻ nhở mình vừa cài. Thẻ microSD hiển thị với đuôi là mmcblk1, nên chọn 2 như ví dụ trong ảnh dưới đây.
+
+<div align="center">
+<p><img width="90%" src="./resources/background/microsd1.jpg"></a></p>
+<div align="left">
+
+5. Ảnh dưới đây là tiến trình chạy sau khi chọn xong.
+
+<div align="center">
+<p><img width="90%" src="./resources/background/microsd2.jpg"></a></p>
+<div align="left">
+
+6. Sau khi chạy xong, gõ lệnh dưới đây trong terminal để kiểm tra kết quả.
+
+    ```sh
+    df
+    ```
+
+<div align="center">
+<p><img width="90%" src="./resources/background/microsd3.jpg"></a></p>
+<div align="left">
+
+
+## <div align="left">Annaconda</div>
+Annaconda dùng để tạo môi trường ảo cho việc cài đặt các thư viện lập trình.
