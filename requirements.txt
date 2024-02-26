@@ -29,3 +29,4 @@ flask==2.3.3
 flask-cors==4.0.0
 pydantic==1.10.7
 imutils==0.5.4
+shapely==2.0.3
