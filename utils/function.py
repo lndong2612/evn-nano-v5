@@ -13,10 +13,11 @@ import numpy as np
 from pathlib import Path
 from config import settings
 from threading import Thread
-# from imutils.video import VideoStream
+from shapely.geometry import Polygon
+from imutils.video import VideoStream
 from detect import get_detected_object
 from urllib.request import urlopen as url
-from utils.plots import draw_object_bboxes, draw_detect_bboxes
+from utils.plots import draw_object_bboxes, draw_detect_bboxes, convert_name_id
 
 # send notifications when unusual object was detected
 def post_notification(data_send, ip_camera, messages):
@@ -61,35 +62,31 @@ def detect_method(image, ip_camera, device, pts):
         """Detect object on input image"""
         weight_path = os.path.join(settings.MODEL, 'best.pt') # model path
 
-        input_image = '{}/original.jpg'.format(settings.IMAGE_FOLDER) # original image path
+        input_image = f'{settings.IMAGE_FOLDER}/original.jpg' # original image path
         cv2.imwrite(input_image, image) # save original image
 
-        classified, det, result, messages = get_detected_object(weight_path, device, settings.DATA_COCO, input_image, pts) # objects detection on image
+        classified = get_detected_object(weight_path, device, settings.DATA_COCO, input_image) # objects detection on image
 
-        if len(det) != 0:
-            im_draw_detect_box = draw_detect_bboxes(image, pts) # drawing detect bboxes
-            im_show = draw_object_bboxes(im_draw_detect_box, classified) # drawing object bboxes
-            output_image = '{}/detected.jpg'.format(settings.IMAGE_FOLDER)
-            cv2.imwrite(output_image, im_show)
+        if len(classified) != 0:
+            classified_overlap = check_overlap(classified, pts)  
+            if len(classified_overlap) != 0:
+                im_draw_detect_box = draw_detect_bboxes(image, pts) # drawing detect bboxes
+                im_show = draw_object_bboxes(im_draw_detect_box, classified_overlap) # drawing object bboxes
+                cv2.imwrite(f'{settings.IMAGE_FOLDER}/detected.jpg', im_show)
 
-            # save image to use for train
-            time_tuple = time.localtime()
-            time_string = time.strftime('%Y%m%d_%H%M%S', time_tuple)
-            data_image = '{}/{}.jpg'.format(settings.DATA_IMAGE_FOLDER, time_string)
-            cv2.imwrite(data_image, im_show)
-            
-            # get infomation
-            status = {
-                'total_objects' : len(det),
-                'objects': str(result),
-                'img_name' : 'detected.jpg',
-                'detected_image_path': output_image,
-            }
-            try:
-                post_notification(status, ip_camera, messages) # send notification to server
-                print('[INFO] Detected!')
-            except UnboundLocalError:
-                pass
+                # # save image to use for train
+                # time_tuple = time.localtime()
+                # time_string = time.strftime('%Y%m%d_%H%M%S', time_tuple)
+                # data_image = f'{settings.DATA_IMAGE_FOLDER}/{time_string}.jpg'
+                # cv2.imwrite(data_image, im_show)
+                
+                # get infomation
+                status, messages = get_message(classified)
+                try:
+                    post_notification(status, ip_camera, messages) # send notification to server
+                    print('[INFO] Detected!!')
+                except UnboundLocalError:
+                    pass
      
         else:
             print('[INFO] Good!')
@@ -397,3 +394,62 @@ class LoadStreams:
 
     def __len__(self):
         return len(self.sources)  # 1E12 frames = 32 streams at 30 FPS for 30 years
+
+def check_overlap(classified, PTS_Area):
+    new_classified = []
+    if len(PTS_Area) != 0:
+        if len(PTS_Area) == 2:
+            xmin = PTS_Area[0][0]
+            xmax = PTS_Area[1][0]
+            ymin = PTS_Area[0][1]
+            ymax = PTS_Area[1][1]
+            PTS_Area = [[xmin, ymin], [xmax, ymin], [xmax, ymax], [xmin, ymax]]
+
+        for info in classified:
+            xmin = info['xmin']
+            ymin = info['ymin']
+            xmax = info['xmax']
+            ymax = info['ymax']
+            PTS_Object = [[xmin, ymin], [xmax, ymin], [xmax, ymax], [xmin, ymax]]
+            polygon1 = Polygon(PTS_Area)
+            polygon2 = Polygon(PTS_Object)
+            intersect = polygon1.intersection(polygon2).area
+            union = polygon1.union(polygon2).area
+            iou = intersect / union
+            if iou != 0:
+                new_classified.append(info)
+    else:
+        new_classified = classified
+
+    return new_classified
+
+def get_message(classified):
+    messages = []
+    result = []
+    # get infomation
+    # initialize an empty dictionary to store label counts
+    label_counts = {}
+
+    # iterate over each dictionary in the list
+    for item in classified:
+        label = item['label']
+        label_counts[label] = label_counts.get(label, 0) + 1 # increment the count for the label
+
+    for label, count in label_counts.items():
+        vn_label = convert_name_id(label, 'vietnamese_name')
+        s = f"Phát hiện {count} {vn_label}"
+        messages.append(s)                   
+        info_label = {
+                "label": label.upper(),
+                "numbers": count
+            }
+        result.append(info_label)
+
+    status = {
+        'total_objects' : len(classified),
+        'objects': str(result),
+        'img_name' : 'detected.jpg',
+        'detected_image_path': f'{settings.IMAGE_FOLDER}/detected.jpg'
+    }
+
+    return status, messages

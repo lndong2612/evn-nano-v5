@@ -1,95 +1,22 @@
-import cv2
-import time
-from threading import Thread
-from utils.function import VideoStream
+from utils.plots import convert_name_id
 
-'''Load frame from camera to get H and W'''
-USER = 'admin'
-PASSWORD = 'thinklabs@36'
-IPADDRESS = '10.10.10.29'
-PORT = '554'
-URL = f"rtsp://{USER}:{PASSWORD}@{IPADDRESS}:{PORT}/cam/realmonitor?channel=1&subtype=1"
+info = [{'xmin': 192, 'ymin': 399, 'xmax': 219, 'ymax': 427, 'score': '0.81', 'label': 'Vehicle'}, {'xmin': 244, 'ymin': 419, 'xmax': 267, 'ymax': 451, 'score': '0.82', 'label': 'Fire'}, {'xmin': 138, 'ymin': 179, 'xmax': 352, 'ymax': 441, 'score': '0.93', 'label': 'Smoke'}]
 
-# class WebcamVideoStream:
-#     def __init__(self, src=0, name="WebcamVideoStream"):
-# 		# initialize the video camera stream and read the first frame
-#         self.src = src
-# 		# from the stream
-#         self.stream = cv2.VideoCapture(self.src)
-#         (self.grabbed, self.frame) = self.stream.read()
+# Initialize an empty dictionary to store label counts
+label_counts = {}
 
-# 		# initialize the thread name
-#         self.name = name
+# Iterate over each dictionary in the list
+for item in info:
+    label = item['label']
+    # Increment the count for the label
+    label_counts[label] = label_counts.get(label, 0) + 1
 
-# 		# initialize the variable used to indicate if the thread should
-# 		# be stopped
-#         self.stopped = False
+print(label_counts)
+# Print the label counts
+message = []
+for label, count in label_counts.items():
+    vn_label = convert_name_id(label, 'vietnamese_name')
+    s = f"Phát hiện {count} {vn_label}"
+    message.append(s)
 
-#     def start(self):
-# 		# start the thread to read frames from the video stream
-#         t = Thread(target=self.update, name=self.name, args=())
-#         t.daemon = True
-#         t.start()
-#         return self
-
-#     def update(self):
-#         while(self.stream.isOpened()):
-#             # keep looping infinitely until the thread is stopped
-#             while True:
-#                 # if the thread indicator variable is set, stop the thread
-#                 if self.stopped:
-#                     return
-
-#                 # otherwise, read the next frame from the stream
-#                 (self.grabbed, self.frame) = self.stream.read()
-#         else:
-#             self.stream = cv2.VideoCapture(self.src)
-#             while True:
-#                 # if the thread indicator variable is set, stop the thread
-#                 if self.stopped:
-#                     return
-
-#                 # otherwise, read the next frame from the stream
-#                 (self.grabbed, self.frame) = self.stream.read()
-                
-#     def read(self):
-# 		# return the frame most recently read
-#         return self.grabbed, self.frame
-
-#     def stop(self):
-# 		# indicate that the thread should be stopped
-#         self.stopped = True
-    
-# class VideoStream:
-#     def __init__(self, src=0):
-# 		# using OpenCV so initialize the webcam stream
-#         self.stream = WebcamVideoStream(src=src)
-
-#     def start(self):
-# 		# start the threaded video stream
-#         return self.stream.start()
-
-#     def update(self):
-# 		# grab the next frame from the stream
-#         self.stream.update()
-
-#     def read(self):
-# 		# return the current frame
-#         return self.stream.read()
-
-#     def stop(self):
-# 		# stop the thread and release any resources
-#         self.stream.stop()
-
-'''Load frame from camera to get H and W'''
-cap = VideoStream(URL).start()
-while True:
-    grabbed, frame = cap.read()
-    if grabbed is True:
-        cv2.imshow('LIVE', cv2.resize(frame,(1080, 720)))
-        if cv2.waitKey(1) & 0XFF == ord('q'):
-            break
-    else:
-        print("[INFO] Camera disconnected ...")
-        time.sleep(5)
-        continue
+print(message)

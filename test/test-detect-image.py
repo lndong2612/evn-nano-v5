@@ -8,12 +8,8 @@ import time
 from config import settings
 from detect import get_detected_object
 from utils.plots import draw_object_bboxes, draw_detect_bboxes
-from utils.function import detect_method, post_notification
+from utils.function import post_notification, check_overlap, get_message
 import traceback 
-
-# input_image_name = 'original.jpg'
-# input_image_path = f'./test/images/objects/{input_image_name}'
-# image = cv2.imread(input_image_path)
 
 ## pts of rectangle
 # pts =[[128,250],[430,520]]
@@ -23,64 +19,42 @@ import traceback
 # pts = [[102, 331], [307, 344], [279, 538], [49, 546]]
 
 ## pts of null
-# pts = []
-
-
-# with open(os.path.join(os.getcwd(), 'info.json'), "r") as outfile:
-#     info_json = json.load(outfile)
-#     pts = info_json['coordinate']
-# print(pts)
-# image = cv2.imread(input_image_path)
-# device = '' # cuda device, i.e. 0 or 0,1,2,3 or cpu
-# weight_path = os.path.join(settings.MODEL, 'best.pt') # model path
-
-# classified, det, result, messages = get_detected_object(weight_path, device, settings.DATA_COCO, input_image_path, pts) # objects detection on image
-# im_draw_detect_box = draw_detect_bboxes(image, pts) # drawing detect bboxes
-# im_show = draw_object_bboxes(im_draw_detect_box, classified) # drawing object bboxes
-# # cv2.imwrite(save_image_path, im_show)
-# cv2.imshow('show', im_show)
-# cv2.waitKey(0)
-device = '' # cuda device, i.e. 0 or 0,1,2,3 or cpu
 pts = []
 
+device = '' # cuda device, i.e. 0 or 0,1,2,3 or cpu
+
 """Detect object on input image"""
-weight_path = 'test/best.pt' # model path
+weight_path = 'resources/weight_init/best.pt' # model path
 
-input_image = 'test/images/objects/evn5.jpg'.format(settings.IMAGE_FOLDER) # original image path
+input_image = 'test/images/objects/evn3.jpg' # original image path
 image = cv2.imread(input_image)
-cv2.imwrite(input_image, image) # save original image
 
-classified, det, result, messages = get_detected_object(weight_path, device, settings.DATA_COCO, input_image, pts) # objects detection on image
+# cv2.imwrite(input_image, image) # save original image
+
+classified = get_detected_object(weight_path, device, settings.DATA_COCO, input_image) # objects detection on image
 try:
-    if len(det) != 0:
-        im_draw_detect_box = draw_detect_bboxes(image, pts) # drawing detect bboxes
-        im_show = draw_object_bboxes(im_draw_detect_box, classified) # drawing object bboxes
-        output_image = 'test/images/detected/detected.jpg'
-        cv2.imwrite(output_image, im_show)
+    if len(classified) != 0:
+        classified_overlap = check_overlap(classified, pts)      
+        if len(classified_overlap) != 0:
+            im_draw_detect_box = draw_detect_bboxes(image, pts) # drawing detect bboxes
+            im_show = draw_object_bboxes(im_draw_detect_box, classified_overlap) # drawing object bboxes
+            output_image = 'detected.jpg'
+            cv2.imwrite(output_image, im_show)
 
-        # save image to use for train
-        time_tuple = time.localtime()
-        time_string = time.strftime('%Y%m%d_%H%M%S', time_tuple)
-        data_image = '{}/{}.jpg'.format(settings.DATA_IMAGE_FOLDER, time_string)
-        cv2.imwrite(data_image, im_show)      
-        
-        # get infomation
-        status = {
-            'total_objects' : len(det),
-            'objects': str(result),
-            'img_name' : 'detected.jpg',
-            'detected_image_path': output_image,
-        }
+            # save image to use for train
+            time_tuple = time.localtime()
+            time_string = time.strftime('%Y%m%d_%H%M%S', time_tuple)
+            data_image = '{}/{}.jpg'.format(settings.DATA_IMAGE_FOLDER, time_string)
+            cv2.imwrite(data_image, im_show)      
 
-        # try:
-        #     info_system = '10.10.10.36'
-        #     post_notification(status, info_system, messages) # send notification to server
-        # except UnboundLocalError:
-        #     pass
 
-        info_system = '10.10.10.36'
-        # post_notification(status, info_system, messages) # send notification to server
-
+            status, messages =  get_message(classified)
+            print(status)
+            print(messages)
+            info_system = '10.10.10.36'
+            # post_notification(status, info_system, messages) # send notification to server
+        else:
+            pass
     else:
         print('[INFO] Good!')
 except:
