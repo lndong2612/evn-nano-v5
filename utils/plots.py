@@ -483,7 +483,7 @@ def draw_object_bboxes(im, classified):
         c1, c2 = (xmin, ymin), (xmax, ymax)
         draw.rectangle([c1, c2], outline = bbox_color[ID], width = bbox_thick)# Draw bbox on image
 
-    # Draw bbox on input image
+    # Draw information on bbox input image
     for info in classified:
         xmin = info['xmin']
         ymin = info['ymin']

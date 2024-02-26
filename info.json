@@ -10,5 +10,22 @@
      "identification_time": 60,
      "cam_height": 1080,
      "cam_width": 1920,
-     "coordinate": [[128,250],[430,520]]
+     "coordinate": [
+          [
+               9,
+               175
+          ],
+          [
+               12,
+               888
+          ],
+          [
+               505,
+               888
+          ],
+          [
+               477,
+               175
+          ]
+     ]
 }

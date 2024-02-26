@@ -139,7 +139,7 @@ def generate():
             # yield the output frame in the byte format
             yield(b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' + 
                 bytearray(encodedImage) + b'\r\n')
-        
+
 
 
 '''Read the camera resize frame'''

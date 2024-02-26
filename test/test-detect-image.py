@@ -11,9 +11,9 @@ from utils.plots import draw_object_bboxes, draw_detect_bboxes
 from utils.function import detect_method, post_notification
 import traceback 
 
-input_image_name = 'original.jpg'
-input_image_path = f'./test/images/objects/{input_image_name}'
-image = cv2.imread(input_image_path)
+# input_image_name = 'original.jpg'
+# input_image_path = f'./test/images/objects/{input_image_name}'
+# image = cv2.imread(input_image_path)
 
 ## pts of rectangle
 # pts =[[128,250],[430,520]]
@@ -44,9 +44,10 @@ device = '' # cuda device, i.e. 0 or 0,1,2,3 or cpu
 pts = []
 
 """Detect object on input image"""
-weight_path = os.path.join(settings.MODEL, 'best.pt') # model path
+weight_path = 'test/best.pt' # model path
 
-input_image = '{}/original.jpg'.format(settings.IMAGE_FOLDER) # original image path
+input_image = 'test/images/objects/evn5.jpg'.format(settings.IMAGE_FOLDER) # original image path
+image = cv2.imread(input_image)
 cv2.imwrite(input_image, image) # save original image
 
 classified, det, result, messages = get_detected_object(weight_path, device, settings.DATA_COCO, input_image, pts) # objects detection on image
@@ -54,7 +55,7 @@ try:
     if len(det) != 0:
         im_draw_detect_box = draw_detect_bboxes(image, pts) # drawing detect bboxes
         im_show = draw_object_bboxes(im_draw_detect_box, classified) # drawing object bboxes
-        output_image = '{}/detected.jpg'.format(settings.IMAGE_FOLDER)
+        output_image = 'test/images/detected/detected.jpg'
         cv2.imwrite(output_image, im_show)
 
         # save image to use for train
@@ -70,13 +71,15 @@ try:
             'img_name' : 'detected.jpg',
             'detected_image_path': output_image,
         }
+
         # try:
         #     info_system = '10.10.10.36'
         #     post_notification(status, info_system, messages) # send notification to server
         # except UnboundLocalError:
         #     pass
+
         info_system = '10.10.10.36'
-        post_notification(status, info_system, messages) # send notification to server
+        # post_notification(status, info_system, messages) # send notification to server
 
     else:
         print('[INFO] Good!')
