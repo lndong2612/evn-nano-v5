@@ -88,7 +88,9 @@ with open(os.path.join(os.getcwd(), 'info.json'), "r") as outfile:
 
 '''Get information from server and update into json file'''
 get_information_from_server(IPCAM, IPEDGECOM, type_cam = True)
-
+with open(os.path.join(os.getcwd(), 'info.json'), "r") as outfile:
+    info_json = json.load(outfile)
+    API_NAME = info_json['api_name']
 
 time.sleep(5)
 
@@ -104,7 +106,7 @@ def detect(ip_camera):
         with open(os.path.join(os.getcwd(), 'info.json'), "r") as outfile:
             info_json = json.load(outfile)
             PTS = info_json['coordinate']
-            IDENTIFICATIONTIME = info_json['identification_time']        
+            IDENTIFICATIONTIME = info_json['identification_time']    
         frame = cap.read()
         time.sleep(IDENTIFICATIONTIME)
         named_tuple = time.localtime() 
@@ -167,7 +169,7 @@ def handler():
         exit(0)
 
 
-@app.route("/api/video_feed")
+@app.route(f"/api/{API_NAME}/video_feed")
 def video_feed():
     # return the response generated along with the specific media
     # type (mime type)
@@ -175,7 +177,7 @@ def video_feed():
         mimetype = "multipart/x-mixed-replace; boundary=frame")
 
 
-@app.route("/api/video_feed_resize")
+@app.route(f"/api/{API_NAME}/video_feed_resize")
 def video_feed_resize():
     # return the response generated along with the specific media
     # type (mime type)
@@ -183,7 +185,7 @@ def video_feed_resize():
         mimetype = "multipart/x-mixed-replace; boundary=frame")
 
 
-@app.route('/api/download_model', methods=['POST'])
+@app.route(f'/api/{API_NAME}/download_model', methods=['POST'])
 def download():
     try:
         file = request.files['file']
@@ -195,7 +197,7 @@ def download():
         return jsonify(status_code = 400, content={"success":"false", "error": str(error)})
 
 
-@app.route('/api/update_info', methods=['POST'])
+@app.route(f'/api/{API_NAME}/update_info', methods=['POST'])
 def update_info():
     try:
         get_information_from_server(IPCAM, IPEDGECOM, type_cam = False)
@@ -206,7 +208,7 @@ def update_info():
         return jsonify(status_code = 400, content={"success":"false", "error": str(error)})
 
 
-@app.route('/api/reboot', methods = ['GET'])
+@app.route(f'/api/{API_NAME}/reboot', methods = ['GET'])
 def reboot():
     try:
         os.system("shutdown -r -t 10")

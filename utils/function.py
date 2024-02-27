@@ -13,12 +13,12 @@ import numpy as np
 from pathlib import Path
 from config import settings
 from threading import Thread
+from detect import get_detected_object
+# from imutils.video import VideoStream
 from shapely.geometry import Polygon
-from imutils.video import VideoStream
 from detect import get_detected_object
 from urllib.request import urlopen as url
 from utils.plots import draw_object_bboxes, draw_detect_bboxes, convert_name_id
-
 # send notifications when unusual object was detected
 def post_notification(data_send, ip_camera, messages):
     try:
@@ -81,7 +81,7 @@ def detect_method(image, ip_camera, device, pts):
                 # cv2.imwrite(data_image, im_show)
                 
                 # get infomation
-                status, messages = get_message(classified)
+                status, messages = get_message(classified_overlap)
                 try:
                     post_notification(status, ip_camera, messages) # send notification to server
                     print('[INFO] Detected!!')
@@ -114,12 +114,13 @@ def get_information_from_server(ip_camera, ip_edcom, type_cam):
             coor = information['detect_point']
             time_detect = information['identification_time']
             brand_name = information['type_id']['brand']
+            api_name = information['api_name']
 
         json_file = open(os.path.join(os.getcwd(), 'info.json'), "r")
         data = json.load(json_file)
         json_file.close()
         data['identification_time'] = time_detect
-
+        data['api_name'] = api_name
         if type_cam == True:
             data['type_camera'] = brand_name
         else:
