@@ -40,9 +40,8 @@ def clip_boxes(boxes, shape):
         boxes[..., [0, 2]] = boxes[..., [0, 2]].clip(0, shape[1])  # x1, x2
         boxes[..., [1, 3]] = boxes[..., [1, 3]].clip(0, shape[0])  # y1, y2
 
-
 # Load model
-def load_model(weights, device, data, source):
+def load_model(weights, device, data):
     data = str(ROOT / data)
     weights = str(ROOT / weights)
     device = select_device(device)
@@ -50,19 +49,19 @@ def load_model(weights, device, data, source):
     model = DetectMultiBackend(weights, device=device, dnn=False, data=data, fp16=False)
     stride, names, pt = model.stride, model.names, model.pt
     imgsz = check_img_size(imgsz, s=stride)  # check image size
-    dataset = LoadImages(source, img_size=imgsz, stride=stride, auto=pt)
     bs = 1  # batch_size
-    return model, pt, bs, imgsz, dataset, device, names
+    
+    return model, pt, bs, imgsz, device, names, stride
 
 # Detect object
-def get_detected_object(weights, device, data, source, conf_thres, iou_thres):
+def get_detected_object(source, conf_thres, iou_thres, model, pt, bs, imgsz, names, stride):
     classified = []
     imgsz = (640, 640)  # inference size (height, width)
     max_det = 10  # maximum detections per image
     classes = None # filter by class: --class 0, or --class 0 2 3
     agnostic_nms = False # class-agnostic NMS
 
-    model, pt, bs, imgsz, dataset, device, names = load_model(weights, device, data, source)
+    dataset = LoadImages(source, img_size=imgsz, stride=stride, auto=pt)
 
     # Run inference
     model.warmup(imgsz=(1 if pt or model.triton else bs, 3, *imgsz))  # warmup

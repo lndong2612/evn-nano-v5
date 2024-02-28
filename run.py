@@ -11,6 +11,7 @@ from config import settings
 from flask_cors import CORS
 from datetime import datetime
 from imutils.video import VideoStream
+from detect import load_model
 from flask import Flask, jsonify, Response, request
 from utils.function import (detect_method, health_check_nano, get_information_from_server , 
                             update_frame_dimension, initialize_information_to_server, checking_internet)
@@ -96,6 +97,10 @@ with open(os.path.join(os.getcwd(), 'info.json'), "r") as outfile:
 time.sleep(5)
 
 
+"""Detect object on input image"""
+weight_path = os.path.join(settings.MODEL, 'best.pt') # model path
+model, pt, bs, imgsz, device, names, stride = load_model(weight_path, device, settings.DATA_COCO)
+
 @app.route('/')
 def index():
     return '[INFO] Running ...'
@@ -116,7 +121,7 @@ def detect(ip_camera):
         named_tuple = time.localtime() 
         time_string = time.strftime("%d-%m-%Y %H:%M:%S", named_tuple)
         print(f"[INFO] Detect on {time_string}.")
-        detect_method(frame3, ip_camera, device, PTS, conf_thres, iou_thres)
+        detect_method(frame3, ip_camera, PTS, conf_thres, iou_thres, model, pt, bs, imgsz, device, names, stride)
 
 
 '''Send health check camera to server'''

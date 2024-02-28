@@ -13,12 +13,16 @@
 *.avi
 *.data
 *.cfg
+*.pt
 !setup.cfg
 !cfg/yolov3*.cfg
 
 storage.googleapis.com
 runs/*
 data/*
+datatest/*
+datatest/images*
+datatest/results*
 resources/*
 resources/images/*
 resources/weight_init/*
