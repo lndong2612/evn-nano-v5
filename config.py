@@ -11,6 +11,8 @@ class Settings(BaseSettings):
     DATA_IMAGE_FOLDER: str = os.path.join(RESOURCES, 'data')
     MODEL: str = os.path.join(RESOURCES, 'weight_init')
     DATA_COCO: str = './data/coco.yaml'
+    CONF_THRES: float = 0.2
+    IOU_THRES: float = 0.2
 
 settings = Settings()
 settings.IMAGE_FOLDER: str = os.path.join(settings.RESOURCES, 'images')

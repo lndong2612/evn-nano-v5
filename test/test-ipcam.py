@@ -31,14 +31,9 @@ USER = 'admin'
 PASSWORD = 'thinklabs@36'
 IPADDRESS = '10.10.10.29'
 PORT = '554'
-URL = f"rtsp://{USER}:{PASSWORD}@{IPADDRESS}:{PORT}/cam/realmonitor?channel=1&subtype=1"
+URL = f"rtsp://{USER}:{PASSWORD}@{IPADDRESS}:{PORT}/ISAPI/Streaming/channels/101"
 # # ---------------------------------------------------------------
 
-
-
-def recall():
-    while(True):
-        frame = camera.read()
 
 def camera(recall):
     while (recall):

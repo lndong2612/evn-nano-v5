@@ -55,11 +55,9 @@ def load_model(weights, device, data, source):
     return model, pt, bs, imgsz, dataset, device, names
 
 # Detect object
-def get_detected_object(weights, device, data, source):
+def get_detected_object(weights, device, data, source, conf_thres, iou_thres):
     classified = []
     imgsz = (640, 640)  # inference size (height, width)
-    conf_thres = 0.66  # confidence threshold
-    iou_thres = 0.75  # NMS IOU threshold
     max_det = 10  # maximum detections per image
     classes = None # filter by class: --class 0, or --class 0 2 3
     agnostic_nms = False # class-agnostic NMS

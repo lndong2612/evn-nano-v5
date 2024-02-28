@@ -1,31 +1,24 @@
 {
-     "ip_edgecom": "10.10.10.63",
-     "ip_camera": "10.10.10.36",
+     "ip_edgecom": "10.10.10.92",
+     "ip_camera": "10.10.10.29",
      "name_camera": "TLs - Ezviz36",
      "user_camera": "admin",
-     "password_camera": "CHBAJT",
+     "password_camera": "thinklabs@36",
      "port_camera": "554",
      "channel_camera": "1",
-     "type_camera": "Ezviz",
+     "type_camera": "HIK",
      "identification_time": 60,
      "cam_height": 1080,
      "cam_width": 1920,
      "coordinate": [
           [
-               9,
-               175
+               33,
+               28
           ],
           [
-               12,
-               888
-          ],
-          [
-               505,
-               888
-          ],
-          [
-               477,
-               175
+               1221,
+               902
           ]
-     ]
+     ],
+     "api_name": "camera003"
 }

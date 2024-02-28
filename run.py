@@ -62,11 +62,12 @@ with open(os.path.join(os.getcwd(), 'info.json'), "r") as outfile:
 
 
 '''Check camera type to get URL'''
-if CAMTYPE == 'Dahua' or CAMTYPE == 'HIK':
+if CAMTYPE == 'Dahua':
     URL = f'rtsp://{USERCAM}:{PASSWORDCAM}@{IPCAM}:{PORTCAM}/cam/realmonitor?channel={CHANNELCAM}&subtype=1' # camera Dahua
 elif CAMTYPE == 'Ezviz':
     URL = f'rtsp://{USERCAM}:{PASSWORDCAM}@{IPCAM}:{PORTCAM}/onvif{CHANNELCAM}' # camera Ezviz
-
+elif CAMTYPE == 'HIK':
+    URL = f'rtsp://{USERCAM}:{PASSWORDCAM}@{IPCAM}:{PORTCAM}/ISAPI/Streaming/channels/101' # camera HIK
 
 app = Flask(__name__)
 CORS(app)
@@ -102,6 +103,8 @@ def index():
 
 '''Detect object on input image'''
 def detect(ip_camera):
+    conf_thres = settings.CONF_THRES # confidence threshold
+    iou_thres = settings.IOU_THRES # NMS IOU threshold
     while True:
         with open(os.path.join(os.getcwd(), 'info.json'), "r") as outfile:
             info_json = json.load(outfile)
@@ -112,7 +115,7 @@ def detect(ip_camera):
         named_tuple = time.localtime() 
         time_string = time.strftime("%d-%m-%Y %H:%M:%S", named_tuple)
         print(f"[INFO] Detect on {time_string}.")
-        detect_method(frame, ip_camera, device, PTS)
+        detect_method(frame, ip_camera, device, PTS, conf_thres, iou_thres)
 
 
 '''Send health check camera to server'''
