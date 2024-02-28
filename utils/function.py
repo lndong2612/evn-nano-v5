@@ -57,7 +57,7 @@ def health_check_nano(ip_edgecom):
         traceback.print_exc() 
         pass
 
-def detect_method(image, ip_camera, pts, conf_thres, iou_thres, model, pt, bs, imgsz, device, names, stride):
+def detect_method(image, ip_camera, pts, conf_thres, iou_thres, model, pt, bs, imgsz, names, stride):
     try:
         """Detect object on input image"""
         weight_path = os.path.join(settings.MODEL, 'best.pt') # model path
@@ -65,7 +65,7 @@ def detect_method(image, ip_camera, pts, conf_thres, iou_thres, model, pt, bs, i
         input_image = f'{settings.IMAGE_FOLDER}/original.jpg' # original image path
         cv2.imwrite(input_image, image) # save original image
 
-        classified = get_detected_object(weight_path, settings.DATA_COCO, input_image, conf_thres, iou_thres, model, pt, bs, imgsz, device, names, stride) # objects detection on image
+        classified = get_detected_object(input_image, conf_thres, iou_thres, model, pt, bs, imgsz, names, stride) # objects detection on image
 
         if len(classified) != 0:
             classified_overlap = check_overlap(classified, pts)  

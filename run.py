@@ -99,7 +99,7 @@ time.sleep(5)
 
 """Detect object on input image"""
 weight_path = os.path.join(settings.MODEL, 'best.pt') # model path
-model, pt, bs, imgsz, device, names, stride = load_model(weight_path, device, settings.DATA_COCO)
+model, pt, bs, imgsz, names, stride = load_model(weight_path, device, settings.DATA_COCO)
 
 @app.route('/')
 def index():
@@ -121,7 +121,7 @@ def detect(ip_camera):
         named_tuple = time.localtime() 
         time_string = time.strftime("%d-%m-%Y %H:%M:%S", named_tuple)
         print(f"[INFO] Detect on {time_string}.")
-        detect_method(frame3, ip_camera, PTS, conf_thres, iou_thres, model, pt, bs, imgsz, device, names, stride)
+        detect_method(frame3, ip_camera, PTS, conf_thres, iou_thres, model, pt, bs, imgsz, names, stride)
 
 
 '''Send health check camera to server'''

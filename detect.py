@@ -51,7 +51,7 @@ def load_model(weights, device, data):
     imgsz = check_img_size(imgsz, s=stride)  # check image size
     bs = 1  # batch_size
     
-    return model, pt, bs, imgsz, device, names, stride
+    return model, pt, bs, imgsz, names, stride
 
 # Detect object
 def get_detected_object(source, conf_thres, iou_thres, model, pt, bs, imgsz, names, stride):
