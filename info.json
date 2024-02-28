@@ -7,17 +7,17 @@
      "port_camera": "554",
      "channel_camera": "1",
      "type_camera": "HIK",
-     "identification_time": 60,
+     "identification_time": 10,
      "cam_height": 1080,
      "cam_width": 1920,
      "coordinate": [
           [
-               33,
-               28
+               213,
+               63
           ],
           [
-               1221,
-               902
+               1842,
+               1049
           ]
      ],
      "api_name": "camera003"

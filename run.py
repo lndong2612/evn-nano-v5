@@ -79,7 +79,7 @@ frame = cap.read()
 height = frame.shape[0]
 width = frame.shape[1]
 update_frame_dimension(height, width) # Write H and W to json file
-
+cap.stop()
 
 '''Initialize the camera for the first time on the server with information from the json file'''
 with open(os.path.join(os.getcwd(), 'info.json'), "r") as outfile:
@@ -105,17 +105,18 @@ def index():
 def detect(ip_camera):
     conf_thres = settings.CONF_THRES # confidence threshold
     iou_thres = settings.IOU_THRES # NMS IOU threshold
+    cap3 = VideoStream(URL).start()
     while True:
         with open(os.path.join(os.getcwd(), 'info.json'), "r") as outfile:
             info_json = json.load(outfile)
             PTS = info_json['coordinate']
             IDENTIFICATIONTIME = info_json['identification_time']    
-        frame = cap.read()
+        frame3 = cap3.read()
         time.sleep(IDENTIFICATIONTIME)
         named_tuple = time.localtime() 
         time_string = time.strftime("%d-%m-%Y %H:%M:%S", named_tuple)
         print(f"[INFO] Detect on {time_string}.")
-        detect_method(frame, ip_camera, device, PTS, conf_thres, iou_thres)
+        detect_method(frame3, ip_camera, device, PTS, conf_thres, iou_thres)
 
 
 '''Send health check camera to server'''
@@ -130,14 +131,15 @@ def send_healthcheck(ip_edgecom):
 
 ''' Read the camera frame'''
 def generate():
+    cap1 = VideoStream(URL).start()
     frame_rate = 1 # Frame per second
     prev = 0 # Previous frame time    
     while True:
         time_elapsed = time.time() - prev
-        frame = cap.read()
+        frame1 = cap1.read()
         if time_elapsed > 1./frame_rate:
             prev = time.time()        
-            (flag, encodedImage) = cv2.imencode(".jpg", frame)
+            (flag, encodedImage) = cv2.imencode(".jpg", frame1)
             # ensure the frame was successfully encoded
             if not flag:
                 continue
@@ -149,14 +151,15 @@ def generate():
 
 '''Read the camera resize frame'''
 def generate_resize():
+    cap2 = VideoStream(URL).start()
     frame_rate = 1 # Frame per second
     prev = 0 # Previous frame time       
     while True:
         time_elapsed = time.time() - prev
-        frame = cap.read()
+        frame2 = cap2.read()
         if time_elapsed > 1./frame_rate:
             prev = time.time()     
-            frame_resize = cv2.resize(frame, (853, 480))
+            frame_resize = cv2.resize(frame2, (853, 480))
             (flag, encodedImage) = cv2.imencode(".jpg", frame_resize)
             # ensure the frame was successfully encoded
             if not flag:
