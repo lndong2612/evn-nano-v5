@@ -13,7 +13,6 @@
 *.avi
 *.data
 *.cfg
-*.pt
 !setup.cfg
 !cfg/yolov3*.cfg
 
@@ -23,9 +22,6 @@ data/*
 datatest/*
 datatest/images*
 datatest/results*
-resources/*
-resources/images/*
-resources/weight_init/*
 resources/data/*
 resources/trained_server/*
 test/images/objects*
