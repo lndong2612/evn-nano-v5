@@ -137,7 +137,7 @@ def send_healthcheck(ip_edgecom):
 ''' Read the camera frame'''
 def generate():
     cap_out = VideoStream(URL).start()
-    frame_rate = 1 # Frame per second
+    frame_rate = 10 # Frame per second
     prev = 0 # Previous frame time    
     while True:
         time_elapsed = time.time() - prev
@@ -157,7 +157,7 @@ def generate():
 '''Read the camera resize frame'''
 def generate_resize():
     cap_out_resize = VideoStream(URL).start()
-    frame_rate = 1 # Frame per second
+    frame_rate = 10 # Frame per second
     prev = 0 # Previous frame time       
     while True:
         time_elapsed = time.time() - prev
@@ -202,6 +202,7 @@ def download():
         file = request.files['file']
         file.save('./resources/weight_init/best.pt') 
         mess = '[INFO] Model saved!'
+        model, pt, bs, imgsz, names, stride = load_model(weight_path, device, settings.DATA_COCO)
         return jsonify(status_code = 200, content={'message':mess})
     except SystemError as error:
         mess = '[INFO] Save model fail ...'
