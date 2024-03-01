@@ -19,6 +19,8 @@ from shapely.geometry import Polygon
 from detect import get_detected_object
 from urllib.request import urlopen as url
 from utils.plots import draw_object_bboxes, draw_detect_bboxes, convert_name_id
+
+
 # send notifications when unusual object was detected
 def post_notification(data_send, ip_camera, messages):
     try:
@@ -41,6 +43,7 @@ def post_notification(data_send, ip_camera, messages):
         traceback.print_exc() 
         pass
 
+
 # send status of edge com
 def health_check_nano(ip_edgecom):
     try:
@@ -56,6 +59,7 @@ def health_check_nano(ip_edgecom):
         print('[INFO] Error:')
         traceback.print_exc() 
         pass
+
 
 def detect_method(image, ip_camera, pts, conf_thres, iou_thres, model, pt, bs, imgsz, names, stride):
     try:
@@ -73,12 +77,6 @@ def detect_method(image, ip_camera, pts, conf_thres, iou_thres, model, pt, bs, i
                 im_draw_detect_box = draw_detect_bboxes(image, pts) # drawing detect bboxes
                 im_show = draw_object_bboxes(im_draw_detect_box, classified_overlap) # drawing object bboxes
                 cv2.imwrite(f'{settings.IMAGE_FOLDER}/detected.jpg', im_show)
-
-                # # save image to use for train
-                # time_tuple = time.localtime()
-                # time_string = time.strftime('%Y%m%d_%H%M%S', time_tuple)
-                # data_image = f'{settings.DATA_IMAGE_FOLDER}/{time_string}.jpg'
-                # cv2.imwrite(data_image, im_show)
                 
                 # get infomation
                 status, messages = get_message(classified_overlap)
@@ -97,7 +95,7 @@ def detect_method(image, ip_camera, pts, conf_thres, iou_thres, model, pt, bs, i
 
 
 # Update information from server into json file
-def get_information_from_server(ip_camera, ip_edcom, type_cam):
+def get_information_from_server(ip_camera, ip_edcom):
     try:
         url = f"https://tcamera.thinklabs.com.vn/api/camera/getCameraByIp/{ip_camera}"
 
@@ -111,21 +109,25 @@ def get_information_from_server(ip_camera, ip_edcom, type_cam):
         info = response.text
         res = json.loads(info)
         for information in res['data']:
-            coor = information['detect_point']
+            camera_name = information['name']
             time_detect = information['identification_time']
             brand_name = information['type_id']['brand']
             api_name = information['api_name']
+            username = information['username']
+            password = information['password']
+            port = information['port']            
+            coor = information['detect_point']
 
         json_file = open(os.path.join(os.getcwd(), 'info.json'), "r")
         data = json.load(json_file)
         json_file.close()
+        data['name_camera'] = camera_name
+        data['user_camera'] = username
+        data['password_camera'] = password
+        data['port_camera'] = port        
         data['identification_time'] = time_detect
         data['api_name'] = api_name
-        if type_cam == True:
-            data['type_camera'] = brand_name
-        else:
-            pass
-
+        data['type_camera'] = brand_name
         data['coordinate'] = coor
 
         # Save our changes to JSON file
@@ -455,20 +457,19 @@ def get_message(classified):
 
     return status, messages
 
-def camera_type(cam_type):
+def camera_type():
     with open(os.path.join(os.getcwd(), 'info.json'), "r") as outfile:
         info_json = json.load(outfile)
         IPCAM = info_json['ip_camera']
         USERCAM = info_json['user_camera']
         PASSWORDCAM = info_json['password_camera']
         PORTCAM = info_json['port_camera']
-        CHANNELCAM = info_json['channel_camera']
         CAMTYPE = info_json['type_camera']
             
     if CAMTYPE == 'Dahua':
-        URL = f'rtsp://{USERCAM}:{PASSWORDCAM}@{IPCAM}:{PORTCAM}/cam/realmonitor?channel={CHANNELCAM}&subtype=1' # camera Dahua
+        URL = f'rtsp://{USERCAM}:{PASSWORDCAM}@{IPCAM}:{PORTCAM}/cam/realmonitor?channel=1&subtype=1' # camera Dahua
     elif CAMTYPE == 'Ezviz':
-        URL = f'rtsp://{USERCAM}:{PASSWORDCAM}@{IPCAM}:{PORTCAM}/onvif{CHANNELCAM}' # camera Ezviz
+        URL = f'rtsp://{USERCAM}:{PASSWORDCAM}@{IPCAM}:{PORTCAM}/onvif1' # camera Ezviz
     elif CAMTYPE == 'HIK':
         URL = f'rtsp://{USERCAM}:{PASSWORDCAM}@{IPCAM}:{PORTCAM}/ISAPI/Streaming/channels/101' # camera HIK
 

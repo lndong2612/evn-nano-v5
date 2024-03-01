@@ -59,7 +59,9 @@ with open(os.path.join(os.getcwd(), 'info.json'), "r") as outfile:
 
 
 '''Get information from server and update into json file'''
-get_information_from_server(IPCAM, IPEDGECOM, type_cam = True)
+get_information_from_server(IPCAM, IPEDGECOM)
+
+
 with open(os.path.join(os.getcwd(), 'info.json'), "r") as outfile:
     info_json = json.load(outfile)
     API_NAME = info_json['api_name']
@@ -85,8 +87,6 @@ with open(os.path.join(os.getcwd(), 'info.json'), "r") as outfile:
     initialize_information_to_server(info_json)
 
 
-
-
 time.sleep(5)
 
 
@@ -103,8 +103,8 @@ def index():
 def detect(ip_camera):
     conf_thres = settings.CONF_THRES # confidence threshold
     iou_thres = settings.IOU_THRES # NMS IOU threshold
-    cap_detect = VideoStream(URL).start()
     while True:
+        cap_detect = VideoStream(URL).start()
         with open(os.path.join(os.getcwd(), 'info.json'), "r") as outfile:
             info_json = json.load(outfile)
             PTS = info_json['coordinate']

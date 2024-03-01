@@ -11,6 +11,7 @@ from utils.plots import draw_object_bboxes, draw_detect_bboxes
 from utils.function import post_notification, check_overlap, get_message
 import traceback 
 import time
+from detect import load_model
 ## pts of rectangle
 # pts =[[128,250],[430,520]]
 # pts = [[70,48],[525,273]]
@@ -26,13 +27,17 @@ device = '' # cuda device, i.e. 0 or 0,1,2,3 or cpu
 """Detect object on input image"""
 weight_path = 'resources/weight_init/best.pt' # model path
 
-input_image = 'datatest/images/evn2.jpg' # original image path
+"""Detect object on input image"""
+weight_path = os.path.join(settings.MODEL, 'best.pt') # model path
+model, pt, bs, imgsz, names, stride = load_model(weight_path, device, settings.DATA_COCO)
+
+input_image = 'datatest/images/smoke.jpg' # original image path
 image = cv2.imread(input_image)
 
 # cv2.imwrite(input_image, image) # save original image
 conf_thres = 0.2 # confidence threshold
 iou_thres = 0.2 # NMS IOU threshold
-classified = get_detected_object(weight_path, device, settings.DATA_COCO, input_image, conf_thres, iou_thres) # objects detection on image
+classified = get_detected_object(input_image, conf_thres, iou_thres, model, pt, bs, imgsz, names, stride) # objects detection on image
 time_tuple = time.localtime()
 time_string = time.strftime('%d%m%Y%H%M%S')
 try:
