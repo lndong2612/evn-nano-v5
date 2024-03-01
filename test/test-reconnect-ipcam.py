@@ -1,7 +1,7 @@
 import cv2
 import datetime
 import time
-from imutils.video import VideoStream
+# from utils.function import VideoStream
 
 def reset_attempts():
     return 50
@@ -51,11 +51,18 @@ def connect_camera(URL):
             time.sleep(5)
             continue
 
-# URL = 'rtsp://admin:CHBAJT@10.10.10.36:554/onvif1' # camera Ezviz
+'''Camera Ezviz'''
+# URL = 'rtsp://admin:CHBAJT@10.10.10.36:554/onvif1'
+
+'''Camera Trong Hau'''
+# URL = 'rtsp://admin:Admin12345@tronghau8.kbvision.tv:37779/cam/realmonitor?channel=1&subtype=0'
+
+'''Camera HIK'''
 USER = 'admin'
 PASSWORD = 'thinklabs@36'
 IPADDRESS = '10.10.10.29'
 PORT = '554'
 URL = f"rtsp://{USER}:{PASSWORD}@{IPADDRESS}:{PORT}/cam/realmonitor?channel=1&subtype=1"        
-# URL = 'rtsp://admin:Admin12345@tronghau8.kbvision.tv:37779/cam/realmonitor?channel=1&subtype=0'
+
+
 connect_camera(URL)

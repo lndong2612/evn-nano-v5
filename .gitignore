@@ -19,9 +19,13 @@
 storage.googleapis.com
 runs/*
 data/*
-#resources/*
-#resources/images/*
-#resources/weight_init/*
+datatest/*
+datatest/images*
+datatest/results*
+resources/data/*
+resources/trained_server/*
+test/images/objects*
+test/images/detected*
 # test/*
 data/images/*
 !data/*.yaml
@@ -31,8 +35,15 @@ data/images/*
 !data/images/zidane.jpg
 !data/images/bus.jpg
 !data/*.sh
-
+resources/trained_server/*
 results*.csv
+
+# Camera information ---------------------------------------------------------------------------------------------------
+/info.json
+
+# Code -----------------------------------------------------------------------------------------------------------------
+/draft.py
+/run-test.py
 
 # Datasets -------------------------------------------------------------------------------------------------------------
 coco/

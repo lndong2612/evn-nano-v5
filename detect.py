@@ -16,7 +16,6 @@ from models.common import DetectMultiBackend
 from utils.dataloaders import LoadImages
 from utils.general import (LOGGER, Profile, check_img_size, non_max_suppression, scale_boxes)
 from utils.torch_utils import select_device, smart_inference_mode
-from utils.plots import convert_name_id
 
 @smart_inference_mode()
 
@@ -41,9 +40,8 @@ def clip_boxes(boxes, shape):
         boxes[..., [0, 2]] = boxes[..., [0, 2]].clip(0, shape[1])  # x1, x2
         boxes[..., [1, 3]] = boxes[..., [1, 3]].clip(0, shape[0])  # y1, y2
 
-
 # Load model
-def load_model(weights, device, data, source, pts):
+def load_model(weights, device, data):
     data = str(ROOT / data)
     weights = str(ROOT / weights)
     device = select_device(device)
@@ -51,28 +49,24 @@ def load_model(weights, device, data, source, pts):
     model = DetectMultiBackend(weights, device=device, dnn=False, data=data, fp16=False)
     stride, names, pt = model.stride, model.names, model.pt
     imgsz = check_img_size(imgsz, s=stride)  # check image size
-    dataset = LoadImages(source, pts, img_size=imgsz, stride=stride, auto=pt)
     bs = 1  # batch_size
-    return model, pt, bs, imgsz, dataset, device, names
+    
+    return model, pt, bs, imgsz, names, stride
 
 # Detect object
-def get_detected_object(weights, device, data, source, pts):
+def get_detected_object(source, conf_thres, iou_thres, model, pt, bs, imgsz, names, stride):
     classified = []
-    result = []
-    messages = []
     imgsz = (640, 640)  # inference size (height, width)
-    conf_thres = 0.66  # confidence threshold
-    iou_thres = 0.75  # NMS IOU threshold
     max_det = 10  # maximum detections per image
     classes = None # filter by class: --class 0, or --class 0 2 3
     agnostic_nms = False # class-agnostic NMS
 
-    model, pt, bs, imgsz, dataset, device, names = load_model(weights, device, data, source, pts)
+    dataset = LoadImages(source, img_size=imgsz, stride=stride, auto=pt)
 
     # Run inference
     model.warmup(imgsz=(1 if pt or model.triton else bs, 3, *imgsz))  # warmup
-    seen, _, dt = 0, [], (Profile(), Profile(), Profile())
-    for path, im, im0s, _, s in dataset:
+    _, _, dt = 0, [], (Profile(), Profile(), Profile())
+    for _, im, im0s, _, _ in dataset:
         with dt[0]:
             im = torch.from_numpy(im).to(model.device)
             im = im.half() if model.fp16 else im.float()  # uint8 to fp16/32
@@ -89,28 +83,11 @@ def get_detected_object(weights, device, data, source, pts):
             pred = non_max_suppression(pred, conf_thres, iou_thres, classes, agnostic_nms, max_det=max_det)
 
         # Process predictions
-        for i, det in enumerate(pred):  # per image
-            seen += 1
-            p, im0, _ = path, im0s.copy(), getattr(dataset, 'frame', 0)
-            p = Path(p)  # to Path
-            s += '%gx%g ' % im.shape[2:]  # print string
+        for _, det in enumerate(pred):  # per image
+            im0 = im0s.copy()
             if len(det):
                 # Rescale boxes from img_size to im0 size
                 det[:, :4] = scale_boxes(im.shape[2:], det[:, :4], im0.shape).round()
-
-                for c in det[:, 5].unique():
-                    n = (det[:, 5] == c).sum()  # detections per class
-                    s += f"{n} {names[int(c)]}{'s' * (n > 1)}, "  # add to string
-                    name_label = f"{names[int(c)]}"
-                    numbers_label = f"{n}"
-                    vn_label = convert_name_id(name_label, 'vietnamese_name')
-                    object_mess = f"Phát hiện {numbers_label} {vn_label}."
-                    messages.append(object_mess)                    
-                    info_label = {
-                        "label": name_label.upper(),
-                        "numbers": numbers_label
-                    }
-                    result.append(info_label)
 
                 # Get results
                 for *xyxy, conf, cls in reversed(det):
@@ -127,4 +104,4 @@ def get_detected_object(weights, device, data, source, pts):
                    }                 
                     classified.append(doc)
 
-    return classified, det, result, messages
+    return classified

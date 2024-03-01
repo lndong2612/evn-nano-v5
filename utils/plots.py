@@ -467,11 +467,11 @@ def convert_name_id(eng_name, option):
 def draw_object_bboxes(im, classified):
     image_h, image_w, _ = im.shape
     bbox_thick = int(0.6 * (image_h + image_w) / 400)
-    cv2_im_rgb = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)# Convert the image to RGB (OpenCV uses BGR)
-    pil_im = Image.fromarray(cv2_im_rgb)# Transform the cv2 image to PIL    
-    font_object = ImageFont.truetype("arial.ttf", 18, encoding="unic")# Use a truetype font    
+    cv2_im_rgb = cv2.cvtColor(im, cv2.COLOR_BGR2RGB) # Convert the image to RGB (OpenCV uses BGR)
+    pil_im = Image.fromarray(cv2_im_rgb) # Transform the cv2 image to PIL    
+    font_object = ImageFont.truetype("arial.ttf", 18, encoding="unic") # Use a truetype font    
     draw = ImageDraw.Draw(pil_im)
-    bbox_color = ['#008744', '#ab9c0c', '#8404ba', '#c98504', '#660513', '#77961b']# Colors of bounding box
+    bbox_color = ['#e90b2b', '#696969', '#8404ba', '#ed9121', '#008000'] # Hexa colors of bounding box
 
     # Draw bbox on input image
     for info in classified:
@@ -483,7 +483,7 @@ def draw_object_bboxes(im, classified):
         c1, c2 = (xmin, ymin), (xmax, ymax)
         draw.rectangle([c1, c2], outline = bbox_color[ID], width = bbox_thick)# Draw bbox on image
 
-    # Draw bbox on input image
+    # Draw information on bbox input image
     for info in classified:
         xmin = info['xmin']
         ymin = info['ymin']
