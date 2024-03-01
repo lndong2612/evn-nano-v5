@@ -14,7 +14,7 @@ from imutils.video import VideoStream
 from detect import load_model
 from flask import Flask, jsonify, Response, request
 from utils.function import (detect_method, health_check_nano, get_information_from_server , 
-                            update_frame_dimension, initialize_information_to_server, checking_internet)
+                            update_frame_dimension, initialize_information_to_server, checking_internet, camera_type)
 
 
 print("[INFO] Run module AI ...")
@@ -23,11 +23,19 @@ dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
 print("[INFO] Date and time computer start: ", dt_string)
 
 
+'''Auto reboot computer at 5AM '''
+print("[INFO] Time to reboot computer ...")
+cmd_auto_reboot = 'shutdown -r 05:00'
+os.system(cmd_auto_reboot)
+
+
 ''' cuda device, i.e. 0 or 0,1,2,3 or cpu'''
 device = '' 
 
 
 time.sleep(30)
+
+
 '''Open network on sim 4G '''
 print("[INFO] Open Sim 4G network ...")
 cmd_enable_sim = 'sudo ifmetric wwan0 50'
@@ -39,36 +47,25 @@ except Exception as e:
     pass
 
 
-'''Auto reboot computer at 5AM '''
-print("[INFO] Time to reboot computer ...")
-cmd_auto_reboot = 'shutdown -r 05:00'
-os.system(cmd_auto_reboot)
-
-
 '''Check internet available or not'''
 print("[INFO] Checking internet ...")
 checking_internet()
 
 
-'''Send infomation to server first'''
 with open(os.path.join(os.getcwd(), 'info.json'), "r") as outfile:
     info_json = json.load(outfile)
     IPCAM = info_json['ip_camera']
     IPEDGECOM = info_json['ip_edgecom']
-    USERCAM = info_json['user_camera']
-    PASSWORDCAM = info_json['password_camera']
-    PORTCAM = info_json['port_camera']
-    CHANNELCAM = info_json['channel_camera']
-    CAMTYPE = info_json['type_camera']
 
+
+'''Get information from server and update into json file'''
+get_information_from_server(IPCAM, IPEDGECOM, type_cam = True)
+with open(os.path.join(os.getcwd(), 'info.json'), "r") as outfile:
+    info_json = json.load(outfile)
+    API_NAME = info_json['api_name']
 
 '''Check camera type to get URL'''
-if CAMTYPE == 'Dahua':
-    URL = f'rtsp://{USERCAM}:{PASSWORDCAM}@{IPCAM}:{PORTCAM}/cam/realmonitor?channel={CHANNELCAM}&subtype=1' # camera Dahua
-elif CAMTYPE == 'Ezviz':
-    URL = f'rtsp://{USERCAM}:{PASSWORDCAM}@{IPCAM}:{PORTCAM}/onvif{CHANNELCAM}' # camera Ezviz
-elif CAMTYPE == 'HIK':
-    URL = f'rtsp://{USERCAM}:{PASSWORDCAM}@{IPCAM}:{PORTCAM}/ISAPI/Streaming/channels/101' # camera HIK
+URL = camera_type()
 
 app = Flask(__name__)
 CORS(app)
@@ -88,11 +85,7 @@ with open(os.path.join(os.getcwd(), 'info.json'), "r") as outfile:
     initialize_information_to_server(info_json)
 
 
-'''Get information from server and update into json file'''
-get_information_from_server(IPCAM, IPEDGECOM, type_cam = True)
-with open(os.path.join(os.getcwd(), 'info.json'), "r") as outfile:
-    info_json = json.load(outfile)
-    API_NAME = info_json['api_name']
+
 
 time.sleep(5)
 
@@ -137,12 +130,11 @@ def send_healthcheck(ip_edgecom):
 ''' Read the camera frame'''
 def generate():
     cap_out = VideoStream(URL).start()
-    frame_rate = 10 # Frame per second
     prev = 0 # Previous frame time    
     while True:
         time_elapsed = time.time() - prev
         frame_out = cap_out.read()
-        if time_elapsed > 1./frame_rate:
+        if time_elapsed > 1./settings.FRAME_RATE:
             prev = time.time()        
             (flag, encodedImage) = cv2.imencode(".jpg", frame_out)
             # ensure the frame was successfully encoded
@@ -157,12 +149,11 @@ def generate():
 '''Read the camera resize frame'''
 def generate_resize():
     cap_out_resize = VideoStream(URL).start()
-    frame_rate = 10 # Frame per second
-    prev = 0 # Previous frame time       
+    prev = 0 # Previous frame time
     while True:
         time_elapsed = time.time() - prev
         frame_out_resize = cap_out_resize.read()
-        if time_elapsed > 1./frame_rate:
+        if time_elapsed > 1./settings.FRAME_RATE:
             prev = time.time()     
             frame_resize = cv2.resize(frame_out_resize, (853, 480))
             (flag, encodedImage) = cv2.imencode(".jpg", frame_resize)
@@ -202,7 +193,6 @@ def download():
         file = request.files['file']
         file.save('./resources/weight_init/best.pt') 
         mess = '[INFO] Model saved!'
-        model, pt, bs, imgsz, names, stride = load_model(weight_path, device, settings.DATA_COCO)
         return jsonify(status_code = 200, content={'message':mess})
     except SystemError as error:
         mess = '[INFO] Save model fail ...'

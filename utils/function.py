@@ -454,3 +454,22 @@ def get_message(classified):
     }
 
     return status, messages
+
+def camera_type(cam_type):
+    with open(os.path.join(os.getcwd(), 'info.json'), "r") as outfile:
+        info_json = json.load(outfile)
+        IPCAM = info_json['ip_camera']
+        USERCAM = info_json['user_camera']
+        PASSWORDCAM = info_json['password_camera']
+        PORTCAM = info_json['port_camera']
+        CHANNELCAM = info_json['channel_camera']
+        CAMTYPE = info_json['type_camera']
+            
+    if CAMTYPE == 'Dahua':
+        URL = f'rtsp://{USERCAM}:{PASSWORDCAM}@{IPCAM}:{PORTCAM}/cam/realmonitor?channel={CHANNELCAM}&subtype=1' # camera Dahua
+    elif CAMTYPE == 'Ezviz':
+        URL = f'rtsp://{USERCAM}:{PASSWORDCAM}@{IPCAM}:{PORTCAM}/onvif{CHANNELCAM}' # camera Ezviz
+    elif CAMTYPE == 'HIK':
+        URL = f'rtsp://{USERCAM}:{PASSWORDCAM}@{IPCAM}:{PORTCAM}/ISAPI/Streaming/channels/101' # camera HIK
+
+    return URL

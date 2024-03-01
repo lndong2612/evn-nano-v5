@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     DATA_COCO: str = './data/coco.yaml'
     CONF_THRES: float = 0.2
     IOU_THRES: float = 0.2
+    FRAME_RATE: int = 10 # Frame per second
 
 settings = Settings()
 settings.IMAGE_FOLDER: str = os.path.join(settings.RESOURCES, 'images')
