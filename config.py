@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     CONF_THRES: float = 0.2
     IOU_THRES: float = 0.4
     FRAME_RATE: int = 1 # Frame per second
+    OPTION: int = 2 # 1: Using 1 Model; 2: Using 2 Model
 
 settings = Settings()
 settings.IMAGE_FOLDER: str = os.path.join(settings.RESOURCES, 'images')

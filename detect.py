@@ -54,11 +54,17 @@ def load_model(weights, device, data):
     return model, pt, bs, imgsz, names, stride
 
 # Detect object
-def get_detected_object(source, conf_thres, iou_thres, model, pt, bs, imgsz, names, stride):
+def get_detected_object(source, conf_thres, iou_thres, model, pt, bs, imgsz, names, stride, allow_classes):
+    if allow_classes == 1: # Vehicle Kite Tree
+        classes = [2, 3, 4] # filter by class: --class 0, or --class 0 2 3
+    elif allow_classes == 2: # Vehicle Kite Tree
+        classes = [0, 1] # filter by class: --class 0, or --class 0 2 3
+    elif allow_classes == 0: # Vehicle Kite Tree
+        classes = None # filter by class: --class 0, or --class 0 2 3
     classified = []
     imgsz = (640, 640)  # inference size (height, width)
     max_det = 10  # maximum detections per image
-    classes = None # filter by class: --class 0, or --class 0 2 3
+    
     agnostic_nms = False # class-agnostic NMS
 
     dataset = LoadImages(source, img_size=imgsz, stride=stride, auto=pt)
@@ -101,7 +107,7 @@ def get_detected_object(source, conf_thres, iou_thres, model, pt, bs, imgsz, nam
                         'ymax': int(xyxy[3]), 
                         'score': f'{conf:.2f}',
                         'label': names[c]
-                   }                 
+                   }
                     classified.append(doc)
 
     return classified

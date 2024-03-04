@@ -13,7 +13,7 @@ from datetime import datetime
 from imutils.video import VideoStream
 from detect import load_model
 from flask import Flask, jsonify, Response, request
-from utils.function import (detect_method, health_check_nano, get_information_from_server , 
+from utils.function import (detect_method, detect_method2, health_check_nano, get_information_from_server , 
                             update_frame_dimension, initialize_information_to_server, checking_internet, camera_type, checking_camera)
 
 
@@ -32,6 +32,7 @@ os.system(cmd_auto_reboot)
 ''' cuda device, i.e. 0 or 0,1,2,3 or cpu'''
 device = '' 
 
+option_model = settings.OPTION # NMS IOU threshold
 
 time.sleep(30)
 
@@ -91,32 +92,52 @@ with open(os.path.join(os.getcwd(), 'info.json'), "r") as outfile:
 time.sleep(5)
 
 
-"""Detect object on input image"""
-weight_path = os.path.join(settings.MODEL, 'best.pt') # model path
-model, pt, bs, imgsz, names, stride = load_model(weight_path, device, settings.DATA_COCO)
-
 @app.route('/')
 def index():
     return '[INFO] Running ...'
 
 
 '''Detect object on input image'''
-def detect(ip_camera):
+def detect(ip_camera, option_model):
     conf_thres = settings.CONF_THRES # confidence threshold
     iou_thres = settings.IOU_THRES # NMS IOU threshold
-    while True:
-        cap_detect = VideoStream(URL).start()
-        with open(os.path.join(os.getcwd(), 'info.json'), "r") as outfile:
-            info_json = json.load(outfile)
-            PTS = info_json['coordinate']
-            IDENTIFICATIONTIME = info_json['identification_time']    
-        frame_detect = cap_detect.read()
-        time.sleep(IDENTIFICATIONTIME)
-        named_tuple = time.localtime() 
-        time_string = time.strftime("%d-%m-%Y %H:%M:%S", named_tuple)
-        print(f"[INFO] Detect on {time_string}.")
-        detect_method(frame_detect, ip_camera, PTS, conf_thres, iou_thres, model, pt, bs, imgsz, names, stride)
+    if option_model == 1:
+        """Detect object on input image"""
+        weight_path = os.path.join(settings.MODEL, 'best.pt') # model path
+        model, pt, bs, imgsz, names, stride = load_model(weight_path, device, settings.DATA_COCO)  
+        while True:
+            cap_detect = VideoStream(URL).start()
+            with open(os.path.join(os.getcwd(), 'info.json'), "r") as outfile:
+                info_json = json.load(outfile)
+                PTS = info_json['coordinate']
+                IDENTIFICATIONTIME = info_json['identification_time']    
+            frame_detect = cap_detect.read()
+            time.sleep(IDENTIFICATIONTIME)
+            named_tuple = time.localtime() 
+            time_string = time.strftime("%d-%m-%Y %H:%M:%S", named_tuple)
+            print(f"[INFO] Detect on {time_string}.")
+            detect_method(frame_detect, ip_camera, PTS, conf_thres, iou_thres, model, pt, bs, imgsz, names, stride)
 
+    elif option_model == 2:
+        """Detect object on input image"""
+        weight_path = os.path.join(settings.MODEL, 'best.pt') # model path
+        model, pt, bs, imgsz, names, stride = load_model(weight_path, device, settings.DATA_COCO)  
+
+        weight_path2 = os.path.join(settings.MODEL, 'best2.pt') # model path
+        model2, pt2, bs2, imgsz2, names2, stride2 = load_model(weight_path2, device, settings.DATA_COCO)  
+
+        while True:
+            cap_detect = VideoStream(URL).start()
+            with open(os.path.join(os.getcwd(), 'info.json'), "r") as outfile:
+                info_json = json.load(outfile)
+                PTS = info_json['coordinate']
+                IDENTIFICATIONTIME = info_json['identification_time']    
+            frame_detect = cap_detect.read()
+            time.sleep(IDENTIFICATIONTIME)
+            named_tuple = time.localtime() 
+            time_string = time.strftime("%d-%m-%Y %H:%M:%S", named_tuple)
+            print(f"[INFO] Detect on {time_string}.")
+            detect_method2(frame_detect, ip_camera, PTS, conf_thres, iou_thres, model, pt, bs, imgsz, names, stride, model2, pt2, bs2, imgsz2, names2, stride2)
 
 '''Send health check camera to server'''
 def send_healthcheck(ip_edgecom):
@@ -225,7 +246,7 @@ def reboot():
 
 if __name__ == "__main__":
     # Start a thread that will perform object detection, send health check camera and start flask server on Edge computer
-    p1 = threading.Thread(target=detect, args=(IPCAM, ))
+    p1 = threading.Thread(target=detect, args=(IPCAM, option_model, ))
     p1.daemon = True
     p1.start()
 

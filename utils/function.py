@@ -66,7 +66,7 @@ def detect_method(image, ip_camera, pts, conf_thres, iou_thres, model, pt, bs, i
         input_image = f'{settings.IMAGE_FOLDER}/original.jpg' # original image path
         cv2.imwrite(input_image, image) # save original image
 
-        classified = get_detected_object(input_image, conf_thres, iou_thres, model, pt, bs, imgsz, names, stride) # objects detection on image
+        classified = get_detected_object(input_image, conf_thres, iou_thres, model, pt, bs, imgsz, names, stride, allow_classes=0) # objects detection on image
 
         if len(classified) != 0:
             classified_overlap = check_overlap(classified, pts)  
@@ -90,6 +90,35 @@ def detect_method(image, ip_camera, pts, conf_thres, iou_thres, model, pt, bs, i
         print('[INFO] Error:')
         traceback.print_exc() 
 
+def detect_method2(image, ip_camera, pts, conf_thres, iou_thres, model, pt, bs, imgsz, names, stride, model2, pt2, bs2, imgsz2, names2, stride2):
+    try:
+        input_image = f'{settings.IMAGE_FOLDER}/original.jpg' # original image path
+        cv2.imwrite(input_image, image) # save original image
+
+        classified1 = get_detected_object(input_image, conf_thres, iou_thres, model, pt, bs, imgsz, names, stride, allow_classes=1) # objects detection on image
+        classified2 = get_detected_object(input_image, conf_thres, iou_thres, model2, pt2, bs2, imgsz2, names2, stride2, allow_classes=2) # objects detection on image
+        classified = classified1 + classified2
+        if len(classified) != 0:
+            classified_overlap = check_overlap(classified, pts)  
+            if len(classified_overlap) != 0:
+                im_draw_detect_box = draw_detect_bboxes(image, pts) # drawing detect bboxes
+                im_show = draw_object_bboxes(im_draw_detect_box, classified_overlap) # drawing object bboxes
+                cv2.imwrite(f'{settings.IMAGE_FOLDER}/detected.jpg', im_show)
+                
+                # get infomation
+                status, messages = get_message(classified_overlap)
+                try:
+                    post_notification(status, ip_camera, messages) # send notification to server
+                    print('[INFO] Detected!!')
+                except UnboundLocalError:
+                    pass
+     
+        else:
+            print('[INFO] Good!')
+    except:
+        print("[INFO] Detect object failed.")
+        print('[INFO] Error:')
+        traceback.print_exc() 
 
 # Update information from server into json file
 def get_information_from_server(ip_camera, ip_edcom):

@@ -25,21 +25,30 @@ pts = []
 device = '' # cuda device, i.e. 0 or 0,1,2,3 or cpu
 
 """Detect object on input image"""
-weight_path = 'resources/weight_init/best.pt' # model path
+weight_path2 = 'resources/weight_init/best2.pt' # model path
 
 """Detect object on input image"""
 weight_path = os.path.join(settings.MODEL, 'best.pt') # model path
 model, pt, bs, imgsz, names, stride = load_model(weight_path, device, settings.DATA_COCO)
+model2, pt2, bs2, imgsz2, names2, stride2 = load_model(weight_path2, device, settings.DATA_COCO)
 
-input_image = 'datatest/images/smoke.jpg' # original image path
+input_image = 'datatest/images/fire-tree2.jpg' # original image path
 image = cv2.imread(input_image)
 
 # cv2.imwrite(input_image, image) # save original image
 conf_thres = 0.2 # confidence threshold
-iou_thres = 0.2 # NMS IOU threshold
-classified = get_detected_object(input_image, conf_thres, iou_thres, model, pt, bs, imgsz, names, stride) # objects detection on image
+iou_thres = 0.4 # NMS IOU threshold
+classified1 = get_detected_object(input_image, conf_thres, iou_thres, model, pt, bs, imgsz, names, stride, allow_classes=1) # objects detection on image
+classified2 = get_detected_object(input_image, conf_thres, iou_thres, model2, pt2, bs2, imgsz2, names2, stride2, allow_classes=2) # objects detection on image
 time_tuple = time.localtime()
 time_string = time.strftime('%d%m%Y%H%M%S')
+classified = classified1 + classified2
+
+# print("classified",classified)
+# print("\n")
+# print("classified1",classified1)
+# print("\n")
+# print("classified2",classified2)
 try:
     if len(classified) != 0:
         classified_overlap = check_overlap(classified, pts)      
