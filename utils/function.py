@@ -63,9 +63,6 @@ def health_check_nano(ip_edgecom):
 
 def detect_method(image, ip_camera, pts, conf_thres, iou_thres, model, pt, bs, imgsz, names, stride):
     try:
-        """Detect object on input image"""
-        weight_path = os.path.join(settings.MODEL, 'best.pt') # model path
-
         input_image = f'{settings.IMAGE_FOLDER}/original.jpg' # original image path
         cv2.imwrite(input_image, image) # save original image
 
@@ -212,11 +209,12 @@ def checking_camera(URL):
         grabbed, frame = cap.read()
         if not grabbed:
             print('[INFO] Connect camera done!!')
+            cap.stop()
             break
         else:
             print('[INFO] Fail, connect camera again ...')
             time.sleep(5)
-            continue    
+            continue
     
     return frame, grabbed
 

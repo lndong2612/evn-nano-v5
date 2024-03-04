@@ -13,6 +13,7 @@
 *.avi
 *.data
 *.cfg
+*.pt
 !setup.cfg
 !cfg/yolov3*.cfg
 

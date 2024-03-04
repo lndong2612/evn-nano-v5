@@ -14,7 +14,7 @@ from imutils.video import VideoStream
 from detect import load_model
 from flask import Flask, jsonify, Response, request
 from utils.function import (detect_method, health_check_nano, get_information_from_server , 
-                            update_frame_dimension, initialize_information_to_server, checking_internet, camera_type)
+                            update_frame_dimension, initialize_information_to_server, checking_internet, camera_type, checking_camera)
 
 
 print("[INFO] Run module AI ...")
@@ -74,12 +74,13 @@ CORS(app)
 
 
 '''Load frame from camera to get H and W'''
-cap = VideoStream(URL).start()
-frame = cap.read()
+# cap = VideoStream(URL).start()
+frame, grabbed = checking_camera(URL)
+# frame = cap.read()
 height = frame.shape[0]
 width = frame.shape[1]
 update_frame_dimension(height, width) # Write H and W to json file
-cap.stop()
+# cap.stop()
 
 '''Initialize the camera for the first time on the server with information from the json file'''
 with open(os.path.join(os.getcwd(), 'info.json'), "r") as outfile:
@@ -191,8 +192,11 @@ def video_feed_resize():
 def download():
     try:
         file = request.files['file']
-        file.save('./resources/weight_init/best.pt') 
+        file.save('./resources/weight_init/best.pt')
         mess = '[INFO] Model saved!'
+        """Detect object on input image"""
+        weight_path = os.path.join(settings.MODEL, 'best.pt') # model path
+        model, pt, bs, imgsz, names, stride = load_model(weight_path, device, settings.DATA_COCO)        
         os.system("shutdown -r -t 10")
         return jsonify(status_code = 200, content={'message':mess})
     except SystemError as error:
@@ -239,5 +243,5 @@ if __name__ == "__main__":
     app.run(host=host, port=port, debug=False)    
     
 # release the video stream pointer
-cap.stop()
+# cap.stop()
 signal.signal(signal.SIGINT, handler)

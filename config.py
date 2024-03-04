@@ -12,8 +12,8 @@ class Settings(BaseSettings):
     MODEL: str = os.path.join(RESOURCES, 'weight_init')
     DATA_COCO: str = './data/coco.yaml'
     CONF_THRES: float = 0.2
-    IOU_THRES: float = 0.2
-    FRAME_RATE: int = 10 # Frame per second
+    IOU_THRES: float = 0.4
+    FRAME_RATE: int = 1 # Frame per second
 
 settings = Settings()
 settings.IMAGE_FOLDER: str = os.path.join(settings.RESOURCES, 'images')
