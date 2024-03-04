@@ -193,6 +193,7 @@ def download():
         file = request.files['file']
         file.save('./resources/weight_init/best.pt') 
         mess = '[INFO] Model saved!'
+        os.system("shutdown -r -t 10")
         return jsonify(status_code = 200, content={'message':mess})
     except SystemError as error:
         mess = '[INFO] Save model fail ...'
