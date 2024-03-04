@@ -193,10 +193,7 @@ def download():
     try:
         file = request.files['file']
         file.save('./resources/weight_init/best.pt')
-        mess = '[INFO] Model saved!'
-        """Detect object on input image"""
-        weight_path = os.path.join(settings.MODEL, 'best.pt') # model path
-        model, pt, bs, imgsz, names, stride = load_model(weight_path, device, settings.DATA_COCO)        
+        mess = '[INFO] Model saved!'     
         os.system("shutdown -r -t 10")
         return jsonify(status_code = 200, content={'message':mess})
     except SystemError as error:
@@ -207,7 +204,7 @@ def download():
 @app.route(f'/api/{API_NAME}/update_info', methods=['POST'])
 def update_info():
     try:
-        get_information_from_server(IPCAM, IPEDGECOM, type_cam = False)
+        get_information_from_server(IPCAM, IPEDGECOM)
         mess = '[INFO] Update information done!'
         return jsonify(status_code = 200, content={'message':mess})
     except SystemError as error:
