@@ -55,12 +55,28 @@ def load_model(weights, device, data):
 
 # Detect object
 def get_detected_object(source, conf_thres, iou_thres, model, pt, bs, imgsz, names, stride, allow_classes):
-    if allow_classes == 1: # Vehicle Kite Tree
-        classes = [2, 3, 4] # filter by class: --class 0, or --class 0 2 3
-    elif allow_classes == 2: # Vehicle Kite Tree
-        classes = [0, 1] # filter by class: --class 0, or --class 0 2 3
-    elif allow_classes == 0: # Vehicle Kite Tree
-        classes = None # filter by class: --class 0, or --class 0 2 3
+    if allow_classes == 1: # Smoke Vehicle Kite Tree
+        # if classes == [1]:
+        #     conf_thres = 0.1
+        #     iou_thres = 0.1
+        # elif classes == [2]:
+        #     conf_thres = 0.2
+        #     iou_thres = 0.35
+        # elif classes == [3]:
+        #     conf_thres = 0.2
+        #     iou_thres = 0.35
+        # elif classes == [4]:
+        #     conf_thres = 0.2
+        #     iou_thres = 0.35
+
+        classes = [1, 2, 3, 4] # filter by class: --class 0, or --class 0 2 3
+    elif allow_classes == 2: # Fire
+        classes = [0]
+        conf_thres = 0.2
+        iou_thres = 0.36
+    elif allow_classes == 0: # All
+        classes = None
+    # classes = [0]
     classified = []
     imgsz = (640, 640)  # inference size (height, width)
     max_det = 10  # maximum detections per image

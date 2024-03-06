@@ -11,8 +11,8 @@ class Settings(BaseSettings):
     DATA_IMAGE_FOLDER: str = os.path.join(RESOURCES, 'data')
     MODEL: str = os.path.join(RESOURCES, 'weight_init')
     DATA_COCO: str = './data/coco.yaml'
-    CONF_THRES: float = 0.2
-    IOU_THRES: float = 0.4
+    CONF_THRES: float = 0.1
+    IOU_THRES: float = 0.1
     FRAME_RATE: int = 1 # Frame per second
     OPTION: int = 2 # 1: Using 1 Model; 2: Using 2 Model
 

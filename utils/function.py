@@ -95,8 +95,8 @@ def detect_method2(image, ip_camera, pts, conf_thres, iou_thres, model, pt, bs, 
         input_image = f'{settings.IMAGE_FOLDER}/original.jpg' # original image path
         cv2.imwrite(input_image, image) # save original image
 
-        classified1 = get_detected_object(input_image, conf_thres, iou_thres, model, pt, bs, imgsz, names, stride, allow_classes=1) # objects detection on image
-        classified2 = get_detected_object(input_image, conf_thres, iou_thres, model2, pt2, bs2, imgsz2, names2, stride2, allow_classes=2) # objects detection on image
+        classified1 = get_detected_object(input_image, conf_thres, iou_thres, model, pt, bs, imgsz, names, stride, allow_classes=2) # objects detection on image
+        classified2 = get_detected_object(input_image, conf_thres, iou_thres, model2, pt2, bs2, imgsz2, names2, stride2, allow_classes=1) # objects detection on image
         classified = classified1 + classified2
         if len(classified) != 0:
             classified_overlap = check_overlap(classified, pts)  
@@ -236,7 +236,7 @@ def checking_camera(URL):
     while(True):
         cap = VideoStream(URL).start()
         grabbed, frame = cap.read()
-        if not grabbed:
+        if grabbed:
             print('[INFO] Connect camera done!!')
             cap.stop()
             break
@@ -244,7 +244,7 @@ def checking_camera(URL):
             print('[INFO] Fail, connect camera again ...')
             time.sleep(5)
             continue
-    
+
     return frame, grabbed
 
 class WebcamVideoStream:
@@ -468,7 +468,7 @@ def get_message(classified):
     for label, count in label_counts.items():
         vn_label = convert_name_id(label, 'vietnamese_name')
         s = f"Phát hiện {count} {vn_label}"
-        messages.append(s)                   
+        messages.append(s)                
         info_label = {
                 "label": label.upper(),
                 "numbers": count

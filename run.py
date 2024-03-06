@@ -101,6 +101,7 @@ def index():
 def detect(ip_camera, option_model):
     conf_thres = settings.CONF_THRES # confidence threshold
     iou_thres = settings.IOU_THRES # NMS IOU threshold
+    print(f'Option: {option_model} model')
     if option_model == 1:
         """Detect object on input image"""
         weight_path = os.path.join(settings.MODEL, 'best.pt') # model path
@@ -120,10 +121,10 @@ def detect(ip_camera, option_model):
 
     elif option_model == 2:
         """Detect object on input image"""
-        weight_path = os.path.join(settings.MODEL, 'best.pt') # model path
+        weight_path = os.path.join(settings.MODEL, 'fire.pt') # model path
         model, pt, bs, imgsz, names, stride = load_model(weight_path, device, settings.DATA_COCO)  
 
-        weight_path2 = os.path.join(settings.MODEL, 'best2.pt') # model path
+        weight_path2 = os.path.join(settings.MODEL, 'best.pt') # model path
         model2, pt2, bs2, imgsz2, names2, stride2 = load_model(weight_path2, device, settings.DATA_COCO)  
 
         while True:
@@ -214,7 +215,7 @@ def download():
     try:
         file = request.files['file']
         file.save('./resources/weight_init/best.pt')
-        mess = '[INFO] Model saved!'     
+        mess = '[INFO] Model saved!'
         os.system("shutdown -r -t 10")
         return jsonify(status_code = 200, content={'message':mess})
     except SystemError as error:
