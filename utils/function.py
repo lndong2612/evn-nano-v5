@@ -102,6 +102,9 @@ def detect_method2(image, ip_camera, pts, conf_thres, iou_thres, model, pt, bs, 
             classified_overlap = check_overlap(classified, pts)  
             if len(classified_overlap) != 0:
                 im_draw_detect_box = draw_detect_bboxes(image, pts) # drawing detect bboxes
+                for i in range(len(classified_overlap)):
+                    if classified_overlap[i]['label'] == 'fire':
+                        classified_overlap[i]['label'] = 'Fire'                
                 im_show = draw_object_bboxes(im_draw_detect_box, classified_overlap) # drawing object bboxes
                 cv2.imwrite(f'{settings.IMAGE_FOLDER}/detected.jpg', im_show)
                 
