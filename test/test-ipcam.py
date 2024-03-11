@@ -4,8 +4,8 @@ import cv2
 import time
 from imutils.video import VideoStream
 USER = 'admin'
-PASSWORD = 'abcd1234'
-IPADDRESS = '10.10.10.100'
+PASSWORD = 'L2A704B1'
+IPADDRESS = '10.10.40.3'
 PORT = '554'
 #url = f"rtsp://{USER}:{PASSWORD}@{IPADDRESS}:{PORT}/h264Preview_01_main"
 # url = f'rtsp://{USER}:{PASSWORD}@{IPADDRESS}:{PORT}/onvif1'

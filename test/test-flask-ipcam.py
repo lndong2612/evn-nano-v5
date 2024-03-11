@@ -14,8 +14,8 @@ os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "rtsp_transport;0"
 # URL = f'rtsp://{USER}:{PASSWORD}@{IPADDRESS}:{PORT}/onvif1'
 
 USER = 'admin'
-PASSWORD = 'thinklabs@36'
-IPADDRESS = '10.10.10.29'
+PASSWORD = 'L2A704B1'
+IPADDRESS = '10.10.40.3'
 PORT = '554'
 URL = f"rtsp://{USER}:{PASSWORD}@{IPADDRESS}:{PORT}/cam/realmonitor?channel=1&subtype=1"
 
@@ -42,13 +42,12 @@ def index():
     return '[INFO] Running ...'
 
 
-def generate():
-    cap = VideoStream(URL).start()
+def generate(cap_generate):
     try:
         while True:
             ''' Read the camera frame'''
-            frame = cap.read()
-            (flag, encodedImage) = cv2.imencode(".jpg", frame)
+            frame_generate = cap_generate.read()
+            (flag, encodedImage) = cv2.imencode(".jpg", frame_generate)
             # ensure the frame was successfully encoded
             if not flag:
                 continue
@@ -57,23 +56,23 @@ def generate():
                 bytearray(encodedImage) + b'\r\n')
     except Exception:
         ''' Read the camera frame'''
-        frame = cv2.imread('./resources/background/connection-lost.jpg')
-        frame = cv2.resize(frame, (width, height))
-        (_, encodedImage) = cv2.imencode(".jpg", frame)
+        frame_generate = cv2.imread('./resources/background/nosignal.jpg')
+        frame_generate = cv2.resize(frame, (width, height))
+        (_, encodedImage) = cv2.imencode(".jpg", frame_generate)
 
         # yield the output frame in the byte format
         yield(b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' + 
             bytearray(encodedImage) + b'\r\n')
 
 
-def generate_resize():
-    cap = VideoStream(URL).start()
+def generate_resize(cap_resize):
+    
     try:
         while True:
             '''Read the camera resize frame'''
-            frame = cap.read()
-            frame_resize = cv2.resize(frame, (853, 480))
-            (flag, encodedImage) = cv2.imencode(".jpg", frame_resize)
+            frame_resize = cap_resize.read()
+            frame_resize_output = cv2.resize(frame_resize, (853, 480))
+            (flag, encodedImage) = cv2.imencode(".jpg", frame_resize_output)
             # ensure the frame was successfully encoded
             if not flag:
                 continue
@@ -82,9 +81,9 @@ def generate_resize():
                 bytearray(encodedImage) + b'\r\n')
     except Exception:
         ''' Read the camera frame'''
-        frame = cv2.imread('./resources/background/connection-lost.jpg')
-        frame = cv2.resize(frame, (width, height))
-        (_, encodedImage) = cv2.imencode(".jpg", frame)
+        frame_resize_output = cv2.imread('./resources/background/nosignal.jpg')
+        frame_resize_output = cv2.resize(frame_resize_output, (width, height))
+        (_, encodedImage) = cv2.imencode(".jpg", frame_resize_output)
 
         # yield the output frame in the byte format
         yield(b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' + 
@@ -97,17 +96,19 @@ def handler():
 
 @app.route("/api/video_feed")
 def video_feed():
+    cap_generate = VideoStream(URL).start()
     # return the response generated along with the specific media
     # type (mime type)
-    return Response(generate(),
+    return Response(generate(cap_generate),
         mimetype = "multipart/x-mixed-replace; boundary=frame")
 
 
 @app.route("/api/video_feed_resize")
 def video_feed_resize():
+    cap_resize = VideoStream(URL).start()
     # return the response generated along with the specific media
     # type (mime type)
-    return Response(generate_resize(),
+    return Response(generate_resize(cap_resize),
         mimetype = "multipart/x-mixed-replace; boundary=frame")
  
 
