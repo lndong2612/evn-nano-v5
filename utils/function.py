@@ -2,26 +2,21 @@ import os
 import sys 
 WORKING_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(WORKING_DIR, "../"))
-import re
 import cv2
 import json
 import time
-import math
 import requests
 import traceback
-import numpy as np
-from pathlib import Path
 from config import settings
 from threading import Thread
 from detect import get_detected_object
-# from imutils.video import VideoStream
 from shapely.geometry import Polygon
-from detect import get_detected_object
+from detect import get_detected_object, get_detected_object_v8
 from urllib.request import urlopen as url
-from utils.plots import draw_object_bboxes, draw_detect_bboxes, convert_name_id
+from utils.plots import draw_object_bboxes, draw_warning_area, convert_name_id
 
 
-# send notifications when unusual object was detected
+'''Send notifications when unusual object was detected'''
 def post_notification(data_send, ip_camera, messages):
     try:
         result = ', '.join(messages)
@@ -44,7 +39,7 @@ def post_notification(data_send, ip_camera, messages):
         pass
 
 
-# send status of edge com
+'''Send health status of edge com to server'''
 def health_check_nano(ip_edgecom):
     try:
         url = f"{settings.URLSV}/jetson/status/{ip_edgecom}"
@@ -61,22 +56,23 @@ def health_check_nano(ip_edgecom):
         pass
 
 
-def detect_method(image, ip_camera, pts, conf_thres, iou_thres, model, pt, bs, imgsz, names, stride):
+def detect_method(image, ip_camera, pts, conf_thres, iou_thres, model, pt, bs, imgsz, names, stride, json_object, type_yolo):
     try:
         input_image = f'{settings.IMAGE_FOLDER}/original.jpg' # original image path
         cv2.imwrite(input_image, image) # save original image
-
-        classified = get_detected_object(input_image, conf_thres, iou_thres, model, pt, bs, imgsz, names, stride, allow_classes=0) # objects detection on image
-
+        if type_yolo == 1:
+            classified = get_detected_object(input_image, conf_thres, iou_thres, model, pt, bs, imgsz, names, stride, json_object, allow_classes=0) # objects detection on image with yolov5s
+        else:
+            classified = get_detected_object_v8(input_image, conf_thres, iou_thres, model, imgsz, stride, json_object) # objects detection on image with yolov8            
         if len(classified) != 0:
             classified_overlap = check_overlap(classified, pts)  
             if len(classified_overlap) != 0:
-                im_draw_detect_box = draw_detect_bboxes(image, pts) # drawing detect bboxes
-                im_show = draw_object_bboxes(im_draw_detect_box, classified_overlap) # drawing object bboxes
+                im_draw_warning_area = draw_warning_area(image, pts) # image drawing warning area
+                im_show = draw_object_bboxes(im_draw_warning_area, classified_overlap) # image drawing object bboxes
                 cv2.imwrite(f'{settings.IMAGE_FOLDER}/detected.jpg', im_show)
                 
                 # get infomation
-                status, messages = get_message(classified_overlap)
+                status, messages = get_message(classified_overlap, json_object)
                 try:
                     post_notification(status, ip_camera, messages) # send notification to server
                     print('[INFO] Detected!!')
@@ -91,26 +87,23 @@ def detect_method(image, ip_camera, pts, conf_thres, iou_thres, model, pt, bs, i
         traceback.print_exc() 
         os.system('sudo reboot')
 
-def detect_method2(image, ip_camera, pts, conf_thres, iou_thres, model, pt, bs, imgsz, names, stride, model2, pt2, bs2, imgsz2, names2, stride2):
+def detect_method2(image, ip_camera, pts, conf_thres, iou_thres, model, pt, bs, imgsz, names, stride, model2, pt2, bs2, imgsz2, names2, stride2, json_object):
     try:
         input_image = f'{settings.IMAGE_FOLDER}/original.jpg' # original image path
         cv2.imwrite(input_image, image) # save original image
 
-        classified1 = get_detected_object(input_image, conf_thres, iou_thres, model, pt, bs, imgsz, names, stride, allow_classes=2) # objects detection on image
-        classified2 = get_detected_object(input_image, conf_thres, iou_thres, model2, pt2, bs2, imgsz2, names2, stride2, allow_classes=1) # objects detection on image
-        classified = classified1 + classified2
+        classified1 = get_detected_object(input_image, conf_thres, iou_thres, model, pt, bs, imgsz, names, stride, json_object, allow_classes=2) # objects detection with model 1
+        classified2 = get_detected_object(input_image, conf_thres, iou_thres, model2, pt2, bs2, imgsz2, names2, stride2, json_object, allow_classes=1) # objects detection with model 2
+        classified = classified1 + classified2 # combine 2 results
         if len(classified) != 0:
             classified_overlap = check_overlap(classified, pts)  
             if len(classified_overlap) != 0:
-                im_draw_detect_box = draw_detect_bboxes(image, pts) # drawing detect bboxes
-                for i in range(len(classified_overlap)):
-                    if classified_overlap[i]['label'] == 'fire':
-                        classified_overlap[i]['label'] = 'Fire'                
-                im_show = draw_object_bboxes(im_draw_detect_box, classified_overlap) # drawing object bboxes
+                im_draw_warning_area = draw_warning_area(image, pts) # image drawing warning area
+                im_show = draw_object_bboxes(im_draw_warning_area, classified_overlap) # image drawing object bboxes
                 cv2.imwrite(f'{settings.IMAGE_FOLDER}/detected.jpg', im_show)
                 
                 # get infomation
-                status, messages = get_message(classified_overlap)
+                status, messages = get_message(classified_overlap, json_object)
                 try:
                     post_notification(status, ip_camera, messages) # send notification to server
                     print('[INFO] Detected!!')
@@ -124,8 +117,9 @@ def detect_method2(image, ip_camera, pts, conf_thres, iou_thres, model, pt, bs, 
         print('[INFO] Error:')
         traceback.print_exc()
         os.system('sudo reboot')
+        
 
-# Update information from server into json file
+'''Update information from server into json file'''
 def get_information_from_server(ip_camera, ip_edcom):
     try:
         url = f"https://tcamera.thinklabs.com.vn/api/camera/getCameraByIp/{ip_camera}"
@@ -167,7 +161,7 @@ def get_information_from_server(ip_camera, ip_edcom):
         traceback.print_exc() 
 
 
-# Write H and W to json file
+'''Write H and W to json file'''
 def update_frame_dimension(height, width):
     try:
         json_file = open(os.path.join(os.getcwd(), 'info.json'), "r")
@@ -187,7 +181,8 @@ def update_frame_dimension(height, width):
         print('[INFO] Error:')
         traceback.print_exc()      
 
-# Create new camera for the first time
+
+'''Create new camera for the first time'''
 def initialize_information_to_server(info):
     try:
         NAMECAM = info['name_camera']
@@ -212,7 +207,8 @@ def initialize_information_to_server(info):
         print('[INFO] Error:')
         traceback.print_exc()
 
-# Ping to check internet
+
+'''Ping to check internet'''
 def checking_internet():
     status = ''
     while(True):
@@ -230,7 +226,8 @@ def checking_internet():
             time.sleep(5)
             continue
 
-# Ping to check camera
+
+'''Ping to check camera'''
 def checking_camera(URL):
     while(True):
         cap = VideoStream(URL).start()
@@ -246,14 +243,15 @@ def checking_camera(URL):
 
     cap.stop()
 
-    return frame, grabbed
+    return grabbed, frame
+
 
 class WebcamVideoStream:
     def __init__(self, src=0, name="WebcamVideoStream"):
 		# initialize the video camera stream and read the first frame
-        self.src = src
+        # self.src = src
 		# from the stream
-        self.stream = cv2.VideoCapture(self.src)
+        self.stream = cv2.VideoCapture(src)
         (self.grabbed, self.frame) = self.stream.read()
 
 		# initialize the thread name
@@ -289,27 +287,29 @@ class WebcamVideoStream:
         self.stopped = True
 
 class VideoStream:
-    def __init__(self, src=0):
-		# using OpenCV so initialize the webcam stream
-        self.stream = WebcamVideoStream(src=src)
+	def __init__(self, src=0):
+		# otherwise, we are using OpenCV so initialize the webcam
+		# stream
+		self.stream = WebcamVideoStream(src=src)
 
-    def start(self):
+	def start(self):
 		# start the threaded video stream
-        return self.stream.start()
+		return self.stream.start()
 
-    def update(self):
+	def update(self):
 		# grab the next frame from the stream
-        self.stream.update()
+		self.stream.update()
 
-    def read(self):
+	def read(self):
 		# return the current frame
-        return self.stream.read()
+		return self.stream.read()
 
-    def stop(self):
+	def stop(self):
 		# stop the thread and release any resources
-        self.stream.stop()
+		self.stream.stop()
 
 
+'''Check if bbox of object touch to warning area'''
 def check_overlap(classified, PTS_Area):
     new_classified = []
     if len(PTS_Area) != 0:
@@ -338,7 +338,9 @@ def check_overlap(classified, PTS_Area):
 
     return new_classified
 
-def get_message(classified):
+
+'''Convert to the correct message format to send to the server'''
+def get_message(classified, json_object):
     messages = []
     result = []
     # get infomation
@@ -351,7 +353,7 @@ def get_message(classified):
         label_counts[label] = label_counts.get(label, 0) + 1 # increment the count for the label
 
     for label, count in label_counts.items():
-        vn_label = convert_name_id(label, 'vietnamese_name')
+        vn_label = convert_name_id(label, 'vietnamese_name', json_object)
         s = f"Phát hiện {count} {vn_label}"
         messages.append(s)                
         info_label = {
@@ -368,22 +370,3 @@ def get_message(classified):
     }
 
     return status, messages
-
-def url():
-    with open(os.path.join(os.getcwd(), 'info.json'), "r") as outfile:
-        info_json = json.load(outfile)
-        IPCAM = info_json['ip_camera']
-        USERCAM = info_json['user_camera']
-        PASSWORDCAM = info_json['password_camera']
-        PORTCAM = info_json['port_camera']
-        CAMTYPE = info_json['type_camera']
-            
-    if CAMTYPE.lower() == 'dahua':
-        URL = f'rtsp://{USERCAM}:{PASSWORDCAM}@{IPCAM}:{PORTCAM}/cam/realmonitor?channel=1&subtype=1' # camera Dahua
-    elif CAMTYPE.lower() == 'ezviz':
-        URL = f'rtsp://{USERCAM}:{PASSWORDCAM}@{IPCAM}:{PORTCAM}/onvif1' # camera Ezviz
-    elif CAMTYPE.lower() == 'hik':
-        URL = f'rtsp://{USERCAM}:{PASSWORDCAM}@{IPCAM}:{PORTCAM}/ISAPI/Streaming/channels/101' # camera HIK
-    elif CAMTYPE.lower() == 'imou':
-        URL = f'rtsp://{USERCAM}:{PASSWORDCAM}@{IPCAM}:{PORTCAM}/cam/realmonitor?channel=1&subtype=1' # camera Imou
-    return URL

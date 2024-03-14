@@ -7,16 +7,16 @@ from flask import Flask, Response, jsonify
 from imutils.video import VideoStream
 os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "rtsp_transport;0"
 # replace with your ip address
-# USER = 'admin'
-# PASSWORD = 'CHBAJT'
-# IPADDRESS = '10.10.10.36'
-# PORT = '554'
+USER = 'admin'
+PASSWORD = 'CHBAJT'
+IPADDRESS = '10.10.10.36'
+PORT = '554'
 # URL = f'rtsp://{USER}:{PASSWORD}@{IPADDRESS}:{PORT}/onvif1'
 
-USER = 'admin'
-PASSWORD = 'L2A704B1'
-IPADDRESS = '10.10.40.3'
-PORT = '554'
+# USER = 'admin'
+# PASSWORD = 'L2A704B1'
+# IPADDRESS = '10.10.40.3'
+# PORT = '554'
 URL = f"rtsp://{USER}:{PASSWORD}@{IPADDRESS}:{PORT}/cam/realmonitor?channel=1&subtype=1"
 
 app = Flask(__name__)

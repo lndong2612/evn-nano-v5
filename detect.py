@@ -16,7 +16,7 @@ from models.common import DetectMultiBackend
 from utils.dataloaders import LoadImages
 from utils.general import (LOGGER, Profile, check_img_size, non_max_suppression, scale_boxes)
 from utils.torch_utils import select_device, smart_inference_mode
-
+from utils.plots import convert_name_id
 @smart_inference_mode()
 
 def xywh2xyxy(x):
@@ -54,29 +54,13 @@ def load_model(weights, device, data):
     return model, pt, bs, imgsz, names, stride
 
 # Detect object
-def get_detected_object(source, conf_thres, iou_thres, model, pt, bs, imgsz, names, stride, allow_classes):
+def get_detected_object(source, conf_thres, iou_thres, model, pt, bs, imgsz, names, stride, json_object, allow_classes):
     if allow_classes == 1: # Smoke Vehicle Kite Tree
-        # if classes == [1]:
-        #     conf_thres = 0.1
-        #     iou_thres = 0.1
-        # elif classes == [2]:
-        #     conf_thres = 0.2
-        #     iou_thres = 0.35
-        # elif classes == [3]:
-        #     conf_thres = 0.2
-        #     iou_thres = 0.35
-        # elif classes == [4]:
-        #     conf_thres = 0.2
-        #     iou_thres = 0.35
-
         classes = [1, 2, 3, 4] # filter by class: --class 0, or --class 0 2 3
     elif allow_classes == 2: # Fire
         classes = [0]
-        conf_thres = 0.2
-        iou_thres = 0.36
     elif allow_classes == 0: # All
         classes = None
-    # classes = [0]
     classified = []
     imgsz = (640, 640)  # inference size (height, width)
     max_det = 10  # maximum detections per image
@@ -106,24 +90,62 @@ def get_detected_object(source, conf_thres, iou_thres, model, pt, bs, imgsz, nam
 
         # Process predictions
         for _, det in enumerate(pred):  # per image
-            im0 = im0s.copy()
             if len(det):
                 # Rescale boxes from img_size to im0 size
-                det[:, :4] = scale_boxes(im.shape[2:], det[:, :4], im0.shape).round()
+                det[:, :4] = scale_boxes(im.shape[2:], det[:, :4], im0s.shape).round()
 
                 # Get results
                 for *xyxy, conf, cls in reversed(det):
                     c = int(cls)  # integer class                  
                     if not isinstance(xyxy, torch.Tensor):  # may be list
                         xyxy = torch.stack(xyxy)
-                    doc = {
-                        'xmin': int(xyxy[0]), 
-                        'ymin': int(xyxy[1]), 
-                        'xmax': int(xyxy[2]), 
-                        'ymax': int(xyxy[3]), 
-                        'score': f'{conf:.2f}',
-                        'label': names[c]
-                   }
-                    classified.append(doc)
+
+                    conf_thres = convert_name_id(names[c].capitalize(), 'conf_thres', json_object) # threshold we define
+                    detect_conf = f'{conf:.2f}' # threshold model predict
+                    if float(detect_conf) >= float(conf_thres):
+                        doc = {
+                            'xmin': int(xyxy[0]), 
+                            'ymin': int(xyxy[1]), 
+                            'xmax': int(xyxy[2]), 
+                            'ymax': int(xyxy[3]), 
+                            'score': f'{conf:.2f}',
+                            'label': names[c].capitalize()
+                        }
+                        classified.append(doc)
+
+    return classified
+
+def get_detected_object_v8(source, conf_thres, iou_thres, model, imgsz, stride, json_object):
+    classified = []
+    imgsz = (640, 640)  # inference size (height, width)
+    max_det = 10  # maximum detections per image
+    agnostic_nms = False # class-agnostic NMS
+
+    # Run inference
+    results = model.predict(source, imgsz = imgsz, conf = conf_thres, iou = iou_thres,\
+                            max_det = max_det, agnostic_nms = agnostic_nms, vid_stride = stride)
+    names = model.names
+
+    # Process results list
+    for result in results:
+        boxes = result.boxes  # Boxes object for bounding box outputs
+        cls = boxes.cls
+        conf = boxes.conf  # Confidence level
+        xyxys = boxes.xyxy.tolist()
+
+        for xyxy, conf, cls in zip(xyxys, conf, cls):
+            c = int(cls)  # integer class  
+            conf_thres = convert_name_id(names[c].capitalize(), 'conf_thres', json_object) # threshold we define
+            detect_conf = f'{conf:.2f}' # threshold model predict
+            if float(detect_conf) >= float(conf_thres):               
+                doc = {
+                    'xmin': int(xyxy[0]), 
+                    'ymin': int(xyxy[1]), 
+                    'xmax': int(xyxy[2]), 
+                    'ymax': int(xyxy[3]), 
+                    'score': f'{conf:.2f}',
+                    'label': names[c].capitalize()
+                }                 
+                classified.append(doc)
 
     return classified

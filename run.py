@@ -9,11 +9,12 @@ import time
 import threading
 from config import settings
 from flask_cors import CORS
+from ultralytics import YOLO
 from datetime import datetime
 from detect import load_model
 from flask import Flask, jsonify, Response, request
 from utils.function import (detect_method, detect_method2, health_check_nano, get_information_from_server , 
-                            update_frame_dimension, initialize_information_to_server, checking_internet, VideoStream, checking_camera)
+                            update_frame_dimension, initialize_information_to_server, checking_internet, checking_camera, VideoStream)
 
 
 print("[INFO] Run module AI ...")
@@ -60,32 +61,31 @@ print("[INFO] Checking internet ...")
 checking_internet()
 
 
-with open(os.path.join(os.getcwd(), 'ip.json'), "r") as outfile:
-    ip_json = json.load(outfile)
-    IPCAM = ip_json['ip_camera']
-    IPEDGECOM = ip_json['ip_edgecom']
-
-
-'''Get information from server and update into json file'''
-#get_information_from_server(IPCAM, IPEDGECOM)
-
-
 with open(os.path.join(os.getcwd(), 'info.json'), "r") as outfile:
     info_json = json.load(outfile)
-    API_NAME = info_json['api_name']
+    IPCAM = info_json['ip_camera']
+    IPEDGECOM = info_json['ip_edgecom']
     USERCAM = info_json['user_camera']
     PASSWORDCAM = info_json['password_camera']
     PORTCAM = info_json['port_camera']
+    RTSP_FORMAT = info_json['rtsp_format']
+
+
+'''Get information from server and update into json file'''
+get_information_from_server(IPCAM, IPEDGECOM)
 
 
 '''Check camera type to get URL'''
-URL = f'rtsp://{USERCAM}:{PASSWORDCAM}@{IPCAM}:{PORTCAM}/cam/realmonitor?channel=1&subtype=0&unicast=true&proto=Onvif' # camera KB
+URL = f'rtsp://{USERCAM}:{PASSWORDCAM}@{IPCAM}:{PORTCAM}/{RTSP_FORMAT}' # camera KB
+print(f'[INFO] URL Stream: {URL}')
+
+
 app = Flask(__name__)
 CORS(app)
 
 
 '''Load frame from camera to get H and W'''
-frame, grabbed = checking_camera(URL)
+grabbed, frame = checking_camera(URL)
 height = frame.shape[0]
 width = frame.shape[1]
 update_frame_dimension(height, width) # Write H and W to json file
@@ -98,7 +98,12 @@ cap = VideoStream(URL).start()
 '''Initialize the camera for the first time on the server with information from the json file'''
 with open(os.path.join(os.getcwd(), 'info.json'), "r") as outfile:
     info_json = json.load(outfile)
+    API_NAME = info_json['api_name']
     initialize_information_to_server(info_json)
+
+'''Load file json about object'''
+with open('object.json', 'r', encoding='utf-8') as outfile:
+    json_object = json.load(outfile)
 
 
 time.sleep(5)
@@ -113,21 +118,27 @@ def index():
 def detect(ip_camera, option_model):
     conf_thres = settings.CONF_THRES # confidence threshold
     iou_thres = settings.IOU_THRES # NMS IOU threshold
-    if option_model == 1:
+    type_yolo = settings.TYPE_YOLO # version yolo  (v5 or v8)
+
+    if option_model == 1: # Using 1 model
         """Detect object on input image"""
-        weight_path = os.path.join(settings.MODEL, 'best.pt') # model path
-        model, pt, bs, imgsz, names, stride = load_model(weight_path, device, settings.DATA_COCO)
+        if type_yolo == 1:
+            weight_path = os.path.join(settings.MODEL, 'best.pt') # model path
+            model, pt, bs, imgsz, names, stride = load_model(weight_path, device, settings.DATA_COCO)
+        else:
+            model = YOLO("yolov8l.pt", "detect")
+            imgsz = 640
+            stride = 1
+            pt = None
+            bs = None
+            names = None
         while True:
             with open(os.path.join(os.getcwd(), 'info.json'), "r") as outfile:
                 info_json = json.load(outfile)
                 PTS = info_json['coordinate']
                 IDENTIFICATIONTIME = info_json['identification_time']    
-            frame_detect = cap.read()
-            
-            named_tuple = time.localtime() 
-            time_string = time.strftime("%d-%m-%Y %H:%M:%S", named_tuple)
-            print(f"[INFO] Detect on {time_string}.")
-            detect_method(frame_detect, ip_camera, PTS, conf_thres, iou_thres, model, pt, bs, imgsz, names, stride)
+            _, frame_detect = cap.read()
+            detect_method(frame_detect, ip_camera, PTS, conf_thres, iou_thres, model, pt, bs, imgsz, names, stride, json_object, type_yolo)
             time.sleep(IDENTIFICATIONTIME)
 
     elif option_model == 2:
@@ -142,13 +153,10 @@ def detect(ip_camera, option_model):
                 info_json = json.load(outfile)
                 PTS = info_json['coordinate']
                 IDENTIFICATIONTIME = info_json['identification_time']    
-            frame_detect = cap.read()
-            named_tuple = time.localtime() 
-            time_string = time.strftime("%d-%m-%Y %H:%M:%S", named_tuple)
-            print(f"[INFO] Detect on {time_string}.")
-            detect_method2(frame_detect, ip_camera, PTS, conf_thres, iou_thres, model, pt, bs, imgsz, names, stride, model2, pt2, bs2, imgsz2, names2, stride2)
+            _, frame_detect = cap.read()
+            detect_method2(frame_detect, ip_camera, PTS, conf_thres, iou_thres, model, pt, bs, imgsz, names, stride, model2, pt2, bs2, imgsz2, names2, stride2, json_object)
             time.sleep(IDENTIFICATIONTIME)
-
+    
 
 '''Send health check camera to server'''
 def send_healthcheck(ip_edgecom):
@@ -160,14 +168,13 @@ def send_healthcheck(ip_edgecom):
         health_check_nano(ip_edgecom)
 
 
-
 '''Read the camera resize frame'''
 def generate_resize():
     prev = 0 # Previous frame time
     try:
         while True:
             time_elapsed = time.time() - prev
-            frame_out_resize = cap.read()
+            _, frame_out_resize = cap.read()
             if time_elapsed > 1./settings.FRAME_RATE:
                 prev = time.time()     
                 frame_resize = cv2.resize(frame_out_resize, (853, 480))
@@ -187,7 +194,6 @@ def handler():
     res = input("[INFO] Ctrl-c was pressed. Do you really want to exit? y/n ")
     if res == 'y' or res == 'Y':
         exit(0)
-
 
 
 @app.route(f"/api/{API_NAME}/video_feed_resize")
