@@ -1,5 +1,5 @@
 * Code
-Khi lần đầu triển khai cài đặt máy tính và camera, tạo file tên connect.json ở thư mục gốc với mẫu sau:
+Khi lần đầu triển khai cài đặt máy tính và camera, tạo file tên info.json ở thư mục gốc với mẫu sau:
 
 {
      "ip_edgecom": "",

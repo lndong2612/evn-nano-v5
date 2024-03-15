@@ -249,7 +249,7 @@ def checking_camera(URL):
 class WebcamVideoStream:
     def __init__(self, src=0, name="WebcamVideoStream"):
 		# initialize the video camera stream and read the first frame
-        # self.src = src
+        self.src = src
 		# from the stream
         self.stream = cv2.VideoCapture(src)
         (self.grabbed, self.frame) = self.stream.read()
@@ -261,6 +261,9 @@ class WebcamVideoStream:
 		# be stopped
         self.stopped = False
 
+    def open(self):
+        return self.stream
+    
     def start(self):
 		# start the thread to read frames from the video stream
         t = Thread(target=self.update, name=self.name, args=())
@@ -286,28 +289,37 @@ class WebcamVideoStream:
 		# indicate that the thread should be stopped
         self.stopped = True
 
+    def release(self):
+		# return the frame most recently read
+        self.stream.release()
+
 class VideoStream:
-	def __init__(self, src=0):
+    def __init__(self, src=0):
 		# otherwise, we are using OpenCV so initialize the webcam
 		# stream
-		self.stream = WebcamVideoStream(src=src)
+        self.stream = WebcamVideoStream(src=src)
 
-	def start(self):
+    def start(self):
 		# start the threaded video stream
-		return self.stream.start()
+        return self.stream.start()
+    
+    def open(self):
+        return self.stream.open()
 
-	def update(self):
+    def update(self):
 		# grab the next frame from the stream
-		self.stream.update()
+        self.stream.update()
 
-	def read(self):
+    def read(self):
 		# return the current frame
-		return self.stream.read()
+        return self.stream.read()
 
-	def stop(self):
+    def stop(self):
 		# stop the thread and release any resources
-		self.stream.stop()
+        self.stream.stop()
 
+    def release(self):
+        self.stream.release()
 
 '''Check if bbox of object touch to warning area'''
 def check_overlap(classified, PTS_Area):
