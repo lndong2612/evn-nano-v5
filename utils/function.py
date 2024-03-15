@@ -68,7 +68,7 @@ def detect_method(image, ip_camera, pts, conf_thres, iou_thres, model, pt, bs, i
             classified_overlap = check_overlap(classified, pts)  
             if len(classified_overlap) != 0:
                 im_draw_warning_area = draw_warning_area(image, pts) # image drawing warning area
-                im_show = draw_object_bboxes(im_draw_warning_area, classified_overlap) # image drawing object bboxes
+                im_show = draw_object_bboxes(im_draw_warning_area, classified_overlap, json_object) # image drawing object bboxes
                 cv2.imwrite(f'{settings.IMAGE_FOLDER}/detected.jpg', im_show)
                 
                 # get infomation
