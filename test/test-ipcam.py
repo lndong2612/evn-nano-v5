@@ -1,25 +1,24 @@
 """Access IP Camera in Python OpenCV"""
 import os
 import cv2
-import time
+import json
 from imutils.video import VideoStream
-USER = 'admin'
-PASSWORD = 'CHBAJT'
-IPADDRESS = '10.10.10.36'
-PORT = '554'
-#url = f"rtsp://{USER}:{PASSWORD}@{IPADDRESS}:{PORT}/h264Preview_01_main"
-# url = f'rtsp://{USER}:{PASSWORD}@{IPADDRESS}:{PORT}/onvif1'
-url = 'rtsp://admin:thinklabs@36@10.10.10.29:554/Streaming/Channels/101'
-# url = f'rtsp://{USER}:{PASSWORD}@{IPADDRESS}:{PORT}/cam/realmonitor?channel=1&subtype=1' # camera Dahua
-os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = 'rtsp_transport;udp'
-# replace with your ip address
-# USER = 'admin'
-# PASSWORD = 'CHBAJT'
-# IPADDRESS = '10.10.10.100'
-# PORT = '554'
-# url = f'rtsp://{USER}:{PASSWORD}@{IPADDRESS}:{PORT}/onvif1'
 
-cap = VideoStream(url).start()   
+with open(os.path.join(os.getcwd(), 'info.json'), "r") as outfile:
+    info_json = json.load(outfile)
+    IPCAM = info_json['ip_camera']
+    IPEDGECOM = info_json['ip_edgecom']
+    USERCAM = info_json['user_camera']
+    PASSWORDCAM = info_json['password_camera']
+    PORTCAM = info_json['port_camera']
+    RTSP_FORMAT = info_json['rtsp_format']
+URL = f'rtsp://{USERCAM}:{PASSWORDCAM}@{IPCAM}:{PORTCAM}/{RTSP_FORMAT}'
+
+# URL = f'rtsp://{USER}:{PASSWORD}@{IPADDRESS}:{PORT}/onvif1'
+# URL = f'rtsp://{USER}:{PASSWORD}@{IPADDRESS}:{PORT}/cam/realmonitor?channel=1&subtype=1' # camera Dahua
+os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = 'rtsp_transport;udp'
+
+cap = VideoStream(URL).start()
 while True:
     img = cap.read()
     cv2.imshow('Camera', img)
