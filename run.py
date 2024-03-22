@@ -198,11 +198,11 @@ def download():
     try:
         file = request.files['file']
         file.save('./resources/weight_init/best.pt')
-        mess = '[INFO] Model saved!'
+        mess = '[INFO] Model saved successfully ✅.'
         os.system("shutdown -r -t 10")
         return jsonify(status_code = 200, content={'message':mess})
     except SystemError as error:
-        mess = '[INFO] Save model fail ...'
+        mess = '[INFO] Model saved fail ❌ ...'
         return jsonify(status_code = 400, content={"success":"false", "error": str(error)})
 
 
@@ -210,10 +210,10 @@ def download():
 def update_info():
     try:
         get_information_from_server(IPCAM, IPEDGECOM)
-        mess = '[INFO] Update information done!'
+        mess = '[INFO] Updated information successfully ✅.'
         return jsonify(status_code = 200, content={'message':mess})
     except SystemError as error:
-        mess = '[INFO] Update information fail ...'
+        mess = '[INFO] Updated information fail ❌ ...'
         return jsonify(status_code = 400, content={"success":"false", "error": str(error)})
 
 
