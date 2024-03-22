@@ -315,8 +315,8 @@ def checking_internet():
     count_seconds = 0
     while(True):
         try:
-            # url('https://google.com.vn/', timeout=3) # UBUNTU
-            os.system('ping 1.1.1.1') # WIN
+            url('https://google.com.vn/', timeout=3) # UBUNTU
+            # os.system('ping 1.1.1.1') # WIN
             status = True
         except Exception as e:
             status = False
