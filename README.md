@@ -1,4 +1,4 @@
-# <div align="left">Cài đặt</div>
+# <div align="left">Cài đặt mô hình V5</div>
 
 Hướng dẫn cài đặt đầy đủ chi tiết được viết trong file word hướng dẫn nằm tại thư mục `doc`.
 ## <div align="left">Tạo file info.json</div>
@@ -41,7 +41,7 @@ Vào thư mục  `evn-nano/vpn` mở file `login.conf` và lần lượt sửa t
 ## <div align="left">Tải mô hình AI</div>
 Vào thư mục  `evn-nano/resources` và tạo một thư mục với tên `weight_init`.
 
-Tải files mô hình AI với <a href="https://drive.google.com/drive/folders/1y9OA35H9LJ_9PNXCawJvHUDhaPX8-3d2?usp=sharing">link</a> này. Tên hai mô hình là `best.pt` và `fire.pt`.
+Tải files mô hình AI `V5` với <a href="https://drive.google.com/drive/folders/1y9OA35H9LJ_9PNXCawJvHUDhaPX8-3d2?usp=sharing">link</a> này. Tên hai mô hình là `best.pt` và `fire.pt`.
 
 Hai files mô hình sẽ nằm trong thư mục Downloads, di chuyển hai files mô hình vào thư mục `evn-nano/resources/weight_init`.
 
