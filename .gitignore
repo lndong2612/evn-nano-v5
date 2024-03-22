@@ -19,15 +19,13 @@
 
 storage.googleapis.com
 runs/*
-data/*
-datatest/*
-datatest/images*
-datatest/results*
-resources/data/*
-resources/trained_server/*
+data/videos/*
+resources/images/*.jpg
 resources/weight_init/*
-test/images/objects*
-test/images/detected*
+test/*.py
+!test/test-ipcam.py
+!test/test-flask-ipcam.py
+!test/test-reconnect-ip_flask.py
 # test/*
 data/images/*
 !data/*.yaml

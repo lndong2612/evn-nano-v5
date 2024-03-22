@@ -11,7 +11,7 @@ from config import settings
 from threading import Thread
 from datetime import datetime
 from shapely.geometry import Polygon
-from detect import get_detected_object_v5, get_detected_object_v8
+from detect import get_detected_object_v5
 from urllib.request import urlopen as url
 from utils.plots import draw_object_bboxes, draw_warning_area, convert_name_id
 
@@ -162,9 +162,9 @@ def post_notification(data_send, ip_camera, messages):
         headers = {}
 
         response = requests.request("POST", url, headers=headers, data=payload, files=files)
-        print("[INFO] Send notifications done ✅!")
+        print("[INFO] Notifications sent successfully ✅!")
     except:
-        print("[INFO] Send notifications fail ❌!")
+        print("[INFO] Notifications sent fail ❌!")
         print('[INFO] Error:')
         traceback.print_exc() 
         pass
@@ -179,9 +179,9 @@ def health_check_nano(ip_edgecom):
         'Content-Type': 'application/json'
         }
         response = requests.request("PUT", url, headers=headers, data=payload)
-        print("[INFO] Send health check done ✅!")
+        print("[INFO] Health check sent successfully ✅!")
     except:
-        print("[INFO] Send health check fail ❌!")
+        print("[INFO] Health check sent fail ❌!")
         print('[INFO] Error:')
         traceback.print_exc() 
         pass
@@ -210,7 +210,7 @@ def detect_v5_1(image, ip_camera, pts, conf_thres, iou_thres, model, pt, bs, img
         else:
             print('[INFO] Good ✅!')
     except:
-        print("[INFO] Detect object failed ❌.")
+        print("[INFO] Detected object fail ❌.")
         print('[INFO] Error:')
         traceback.print_exc() 
 
@@ -241,37 +241,10 @@ def detect_v5_2(image, ip_camera, pts, conf_thres, iou_thres, model, pt, bs, img
         else:
             print('[INFO] Good ✅!')
     except:
-        print("[INFO] Detect object failed ❌.")
+        print("[INFO] Detected object fail ❌.")
         print('[INFO] Error:')
         traceback.print_exc()
 
-
-def detect_v8(image, ip_camera, pts, conf_thres, iou_thres, model, imgsz, stride, json_object):
-    try:
-        input_image = f'{settings.IMAGE_FOLDER}/original.jpg' # original image path
-        cv2.imwrite(input_image, image) # save original image
-        classified = get_detected_object_v8(input_image, conf_thres, iou_thres, model, imgsz, stride, json_object) # objects detection on image with yolov8            
-        if len(classified) != 0:
-            classified_overlap = check_overlap(classified, pts)  
-            if len(classified_overlap) != 0:
-                im_draw_warning_area = draw_warning_area(image, pts) # image drawing warning area
-                im_show = draw_object_bboxes(im_draw_warning_area, classified_overlap, json_object) # image drawing object bboxes
-                cv2.imwrite(f'{settings.IMAGE_FOLDER}/detected.jpg', im_show)
-                
-                # get infomation
-                status, messages = get_message(classified_overlap, json_object)
-                try:
-                    print('[INFO] Detected 🆘!')
-                    post_notification(status, ip_camera, messages) # send notification to server
-                except UnboundLocalError:
-                    pass
-     
-        else:
-            print('[INFO] Good ✅!')
-    except:
-        print("[INFO] Detect object failed ❌.")
-        print('[INFO] Error:')
-        traceback.print_exc()
 
 '''Update information from server into json file'''
 def get_information_from_server(ip_camera, ip_edcom):
@@ -307,10 +280,10 @@ def get_information_from_server(ip_camera, ip_edcom):
         json_file = open(os.path.join(os.getcwd(), 'info.json'), "w+")
         json_file.write(json.dumps(data, indent = 5))
         json_file.close()
-        print('[INFO] Update information from server done ✅.')
+        print('[INFO] Updated information from server successfully ✅.')
 
     except:
-        print("[INFO] Update information from server failed ❌.")
+        print("[INFO] Updated information from server fail ❌.")
         print('[INFO] Error:')
         traceback.print_exc()   
 
@@ -329,9 +302,9 @@ def update_frame_dimension(HEIGHTCAM, WIDTHCAM, IPCAM):
         }
 
         response = requests.request("PUT", url, headers=headers, data=payload)        
-        print('[INFO] Update H and W to server done ✅.')
+        print('[INFO] Updated H and W to server successfully ✅.')
     except:
-        print("[INFO] Update H and W to server failed ❌.")
+        print("[INFO] Updated H and W to server fail ❌.")
         print('[INFO] Error:')
         traceback.print_exc()
 
@@ -339,9 +312,11 @@ def update_frame_dimension(HEIGHTCAM, WIDTHCAM, IPCAM):
 '''Ping to check internet'''
 def checking_internet():
     status = ''
+    count_seconds = 0
     while(True):
         try:
-            url('https://google.com.vn/', timeout=3)
+            # url('https://google.com.vn/', timeout=3) # UBUNTU
+            os.system('ping 1.1.1.1') # WIN
             status = True
         except Exception as e:
             status = False
@@ -351,7 +326,15 @@ def checking_internet():
             break
         else:
             print('[INFO] Internet is not available ❌.')
-            time.sleep(5)
+            print(f'[INFO] Time left to reboot if there is no internet connection: {180 - count_seconds}s.')
+            for i in range(5):
+                print(f'Time: {i+1}s')
+                time.sleep(1)
+                count_seconds += 1
+
+            if count_seconds == 180:
+                os.system("sudo reboot")
+            
             continue
 
 
@@ -361,11 +344,11 @@ def checking_camera(URL):
         cap = VideoStream(URL).start()
         grabbed, frame = cap.read()
         if grabbed:
-            print('[INFO] Connect camera done ✅.')
+            print('[INFO] Connected camera successfully ✅.')
             cap.stop()
             break
         else:
-            print('[INFO] Fail, connect camera again ❌ ...')
+            print('[INFO] Connected camera fail, again ❌ ...')
             for i in range(5):
                 print(f'Time: {i+1}s')
                 time.sleep(1)

@@ -13,9 +13,6 @@ with open(os.path.join(os.getcwd(), 'info.json'), "r") as outfile:
     PORTCAM = info_json['port_camera']
     RTSP_FORMAT = info_json['rtsp_format']
 URL = f'rtsp://{USERCAM}:{PASSWORDCAM}@{IPCAM}:{PORTCAM}/{RTSP_FORMAT}'
-
-# URL = f'rtsp://{USER}:{PASSWORD}@{IPADDRESS}:{PORT}/onvif1'
-# URL = f'rtsp://{USER}:{PASSWORD}@{IPADDRESS}:{PORT}/cam/realmonitor?channel=1&subtype=1' # camera Dahua
 os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = 'rtsp_transport;udp'
 
 cap = VideoStream(URL).start()
