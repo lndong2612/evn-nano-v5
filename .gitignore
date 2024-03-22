@@ -19,14 +19,13 @@
 
 storage.googleapis.com
 runs/*
-data/*
-datatest/*
-datatest/images*
-datatest/results*
-resources/data/*
-resources/trained_server/*
-test/images/objects*
-test/images/detected*
+data/videos/*
+resources/images/*.jpg
+resources/weight_init/*
+test/*.py
+!test/test-ipcam.py
+!test/test-flask-ipcam.py
+!test/test-reconnect-ip_flask.py
 # test/*
 data/images/*
 !data/*.yaml
@@ -36,7 +35,6 @@ data/images/*
 !data/images/zidane.jpg
 !data/images/bus.jpg
 !data/*.sh
-resources/trained_server/*
 results*.csv
 
 # Camera information ---------------------------------------------------------------------------------------------------
@@ -44,7 +42,6 @@ results*.csv
 
 # Code -----------------------------------------------------------------------------------------------------------------
 /draft.py
-/run-test.py
 
 # Datasets -------------------------------------------------------------------------------------------------------------
 coco/
