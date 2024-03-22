@@ -35,7 +35,6 @@ data/images/*
 !data/images/zidane.jpg
 !data/images/bus.jpg
 !data/*.sh
-resources/trained_server/*
 results*.csv
 
 # Camera information ---------------------------------------------------------------------------------------------------
