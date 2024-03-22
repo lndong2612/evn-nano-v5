@@ -21,7 +21,7 @@
                 "ID": 2,
                 "length_name": "Phuong_tien",
                 "vietnamese_name": "Phương tiện",
-                "conf_thres": 0.3
+                "conf_thres": 0.6
             }
         ]},
         {"Kite": [
@@ -29,7 +29,7 @@
                 "ID": 3,
                 "length_name": "Dieu",
                 "vietnamese_name": "Diều",
-                "conf_thres": 0.3
+                "conf_thres": 0.6
             }
         ]},
         {"Tree": [
@@ -37,7 +37,7 @@
                 "ID": 4,
                 "length_name": "Cay_coi",
                 "vietnamese_name": "Cây cối",
-                "conf_thres": 0.3
+                "conf_thres": 0.35
             }
         ]}
     ]

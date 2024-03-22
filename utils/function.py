@@ -9,242 +9,11 @@ import requests
 import traceback
 from config import settings
 from threading import Thread
-from detect import get_detected_object
+from datetime import datetime
 from shapely.geometry import Polygon
-from detect import get_detected_object, get_detected_object_v8
+from detect import get_detected_object_v5, get_detected_object_v8
 from urllib.request import urlopen as url
 from utils.plots import draw_object_bboxes, draw_warning_area, convert_name_id
-
-
-'''Send notifications when unusual object was detected'''
-def post_notification(data_send, ip_camera, messages):
-    try:
-        result = ', '.join(messages)
-        url = f"{settings.URLSV}/warning"
-        payload={'content': result,
-        'object': data_send['objects'],
-        'camera_ip': ip_camera,
-        'confirm_status': 'CHUA_XAC_NHAN'}
-        files=[
-            ('file',(data_send['img_name'],open(data_send['detected_image_path'],'rb'),'image/jpeg'))
-        ]
-        headers = {}
-
-        response = requests.request("POST", url, headers=headers, data=payload, files=files)
-        print(response.text)
-    except:
-        print("[INFO] Send notifications failed")
-        print('[INFO] Error:')
-        traceback.print_exc() 
-        pass
-
-
-'''Send health status of edge com to server'''
-def health_check_nano(ip_edgecom):
-    try:
-        url = f"{settings.URLSV}/jetson/status/{ip_edgecom}"
-        payload="{\r\n    \"status\": true\r\n}"
-        headers = {
-        'Content-Type': 'application/json'
-        }
-        response = requests.request("PUT", url, headers=headers, data=payload)
-        print(response.text)
-    except:
-        print("[INFO] Send health check failed")
-        print('[INFO] Error:')
-        traceback.print_exc() 
-        pass
-
-
-def detect_method(image, ip_camera, pts, conf_thres, iou_thres, model, pt, bs, imgsz, names, stride, json_object, type_yolo):
-    try:
-        input_image = f'{settings.IMAGE_FOLDER}/original.jpg' # original image path
-        cv2.imwrite(input_image, image) # save original image
-        if type_yolo == 1:
-            classified = get_detected_object(input_image, conf_thres, iou_thres, model, pt, bs, imgsz, names, stride, json_object, allow_classes=0) # objects detection on image with yolov5s
-        else:
-            classified = get_detected_object_v8(input_image, conf_thres, iou_thres, model, imgsz, stride, json_object) # objects detection on image with yolov8            
-        if len(classified) != 0:
-            classified_overlap = check_overlap(classified, pts)  
-            if len(classified_overlap) != 0:
-                im_draw_warning_area = draw_warning_area(image, pts) # image drawing warning area
-                im_show = draw_object_bboxes(im_draw_warning_area, classified_overlap, json_object) # image drawing object bboxes
-                cv2.imwrite(f'{settings.IMAGE_FOLDER}/detected.jpg', im_show)
-                
-                # get infomation
-                status, messages = get_message(classified_overlap, json_object)
-                try:
-                    post_notification(status, ip_camera, messages) # send notification to server
-                    print('[INFO] Detected!!')
-                except UnboundLocalError:
-                    pass
-     
-        else:
-            print('[INFO] Good!')
-    except:
-        print("[INFO] Detect object failed.")
-        print('[INFO] Error:')
-        traceback.print_exc() 
-        os.system('sudo reboot')
-
-def detect_method2(image, ip_camera, pts, conf_thres, iou_thres, model, pt, bs, imgsz, names, stride, model2, pt2, bs2, imgsz2, names2, stride2, json_object):
-    try:
-        input_image = f'{settings.IMAGE_FOLDER}/original.jpg' # original image path
-        cv2.imwrite(input_image, image) # save original image
-
-        classified1 = get_detected_object(input_image, conf_thres, iou_thres, model, pt, bs, imgsz, names, stride, json_object, allow_classes=2) # objects detection with model 1
-        classified2 = get_detected_object(input_image, conf_thres, iou_thres, model2, pt2, bs2, imgsz2, names2, stride2, json_object, allow_classes=1) # objects detection with model 2
-        classified = classified1 + classified2 # combine 2 results
-        if len(classified) != 0:
-            classified_overlap = check_overlap(classified, pts)  
-            if len(classified_overlap) != 0:
-                im_draw_warning_area = draw_warning_area(image, pts) # image drawing warning area
-                im_show = draw_object_bboxes(im_draw_warning_area, classified_overlap) # image drawing object bboxes
-                cv2.imwrite(f'{settings.IMAGE_FOLDER}/detected.jpg', im_show)
-                
-                # get infomation
-                status, messages = get_message(classified_overlap, json_object)
-                try:
-                    post_notification(status, ip_camera, messages) # send notification to server
-                    print('[INFO] Detected!!')
-                except UnboundLocalError:
-                    pass
-     
-        else:
-            print('[INFO] Good!')
-    except:
-        print("[INFO] Detect object failed.")
-        print('[INFO] Error:')
-        traceback.print_exc()
-        os.system('sudo reboot')
-        
-
-'''Update information from server into json file'''
-def get_information_from_server(ip_camera, ip_edcom):
-    try:
-        url = f"https://tcamera.thinklabs.com.vn/api/camera/getCameraByIp/{ip_camera}"
-
-        payload="{\r\n    \"jetson_ip_address\":\"" + f"{ip_edcom}" "\"\r\n}"
-        headers = {
-        'Content-Type': 'application/json'
-        }
-
-        response = requests.request("GET", url, headers=headers, data=payload)
-
-        info = response.text
-        res = json.loads(info)
-        for information in res['data']:
-            camera_name = information['name']
-            time_detect = information['identification_time']
-            brand_name = information['type_id']['brand']
-            api_name = information['api_name']
-            coor = information['detect_point']
-
-        json_file = open(os.path.join(os.getcwd(), 'info.json'), "r")
-        data = json.load(json_file)
-        json_file.close()
-        data['name_camera'] = camera_name     
-        data['identification_time'] = time_detect
-        data['api_name'] = api_name
-        data['type_camera'] = brand_name
-        data['coordinate'] = coor
-
-        # Save our changes to JSON file
-        json_file = open(os.path.join(os.getcwd(), 'info.json'), "w+")
-        json_file.write(json.dumps(data, indent = 5))
-        json_file.close()
-        print('[INFO] Update information from server done.')
-
-    except:
-        print("[INFO] Update information from server failed.")
-        print('[INFO] Error:')
-        traceback.print_exc() 
-
-
-'''Write H and W to json file'''
-def update_frame_dimension(height, width):
-    try:
-        json_file = open(os.path.join(os.getcwd(), 'info.json'), "r")
-        data = json.load(json_file)
-        json_file.close()
-        data['cam_height'] = height
-        data['cam_width'] = width
-
-        # Save our changes to JSON file
-        json_file = open(os.path.join(os.getcwd(), 'info.json'), "w+")
-        json_file.write(json.dumps(data, indent = 5))
-        json_file.close()
-        print("[INFO] Update frame dimension done.")
-
-    except:
-        print("[INFO] Update frame dimension failed.")
-        print('[INFO] Error:')
-        traceback.print_exc()      
-
-
-'''Create new camera for the first time'''
-def initialize_information_to_server(info):
-    try:
-        NAMECAM = info['name_camera']
-        IPCAM = info['ip_camera']  
-        USERCAM = info['user_camera']
-        PASSWORDCAM = info['password_camera']
-        PORTCAM = info['port_camera']
-        IDENTIFICATIONTIME = info['identification_time']
-        HEIGHTCAM = info['cam_height']
-        WIDTHCAM = info['cam_width']
-
-        url = "https://tcamera.thinklabs.com.vn/api/camera"
-        payload="{\r\n    \"name\": \"" + f"{NAMECAM}" + "\",\r\n    \"ip_address\": \"" + f"{IPCAM}" + "\",\r\n    \"username\": \"" + f"{USERCAM}" + "\",\r\n    \"password\": \"" + f"{PASSWORDCAM}" + "\",\r\n    \"port\": \"" + f"{PORTCAM}" + "\",\r\n    \"cam_width\": \"" + f"{WIDTHCAM}" + "\",\r\n    \"cam_height\": \"" + f"{HEIGHTCAM}" + "\",\r\n    \"identification_time\": \"" + f"{IDENTIFICATIONTIME}" + "\",\r\n    \"status\": true\r\n}"
-        headers = {
-        'Content-Type': 'application/json'
-        }
-
-        response = requests.request("POST", url, headers=headers, data=payload)
-        print('[INFO] Create information on server done.')
-    except:
-        print("[INFO] Create information on server failed.")
-        print('[INFO] Error:')
-        traceback.print_exc()
-
-
-'''Ping to check internet'''
-def checking_internet():
-    status = ''
-    while(True):
-        try:
-            url('https://google.com.vn/', timeout=3)
-            status = True
-        except Exception as e:
-            status = False
-        
-        if status == True:
-            print('[INFO] Internet is available.')
-            break
-        else:
-            print('[INFO] Internet is not available.')
-            time.sleep(5)
-            continue
-
-
-'''Ping to check camera'''
-def checking_camera(URL):
-    while(True):
-        cap = VideoStream(URL).start()
-        grabbed, frame = cap.read()
-        if grabbed:
-            print('[INFO] Connect camera done!!')
-            cap.stop()
-            break
-        else:
-            print('[INFO] Fail, connect camera again ...')
-            time.sleep(5)
-            continue
-
-    cap.stop()
-
-    return grabbed, frame
-
 
 class WebcamVideoStream:
     def __init__(self, src=0, name="WebcamVideoStream"):
@@ -320,6 +89,293 @@ class VideoStream:
 
     def release(self):
         self.stream.release()
+
+
+def reset_attempts():
+    return 50
+
+def process_video(attempts, camera):
+    while(True):
+        (grabbed, frame) = camera.read()
+        if not grabbed:
+            print("[INFO] Disconnected!")
+            camera.release()
+
+            if attempts > 0:
+                time.sleep(5)
+                return True
+            else:
+                return False
+        else:
+            '''Read the camera resize frame'''
+            frame_resize_output = cv2.resize(frame, (853, 480))
+            (flag, encodedImage) = cv2.imencode(".jpg", frame_resize_output)
+            # ensure the frame was successfully encoded
+            if not flag:
+                continue
+            # yield the output frame in the byte format
+            yield(b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' + 
+                bytearray(encodedImage) + b'\r\n')
+
+
+def connect_camera(URL):
+    recall = True
+    attempts = reset_attempts()
+
+    while(recall):
+        camera = VideoStream(URL).start()
+
+        if camera.open().isOpened():
+            print("[INFO] Camera connected at " +
+                datetime.now().strftime("%m-%d-%Y %I:%M:%S%p"))
+            attempts = reset_attempts()
+            recall = process_video(attempts, camera)
+            return recall
+
+        else:
+            print("[INFO] Camera not opened " +
+                datetime.now().strftime("%m-%d-%Y %I:%M:%S%p"))
+            camera.release()
+            attempts -= 1
+            print("[INFO] Attempts: " + str(attempts))
+
+            # give the camera some time to recover
+            for i in range(5):
+                print(f'Time: {i+1}s')
+                time.sleep(1)
+
+            continue
+
+
+'''Send notifications when unusual object was detected'''
+def post_notification(data_send, ip_camera, messages):
+    try:
+        result = ', '.join(messages)
+        url = f"{settings.URLSV}/warning"
+        payload={'content': result,
+        'object': data_send['objects'],
+        'camera_ip': ip_camera,
+        'confirm_status': 'CHUA_XAC_NHAN'}
+        files=[
+            ('file',(data_send['img_name'],open(data_send['detected_image_path'],'rb'),'image/jpeg'))
+        ]
+        headers = {}
+
+        response = requests.request("POST", url, headers=headers, data=payload, files=files)
+        print("[INFO] Send notifications done ✅!")
+    except:
+        print("[INFO] Send notifications fail ❌!")
+        print('[INFO] Error:')
+        traceback.print_exc() 
+        pass
+
+
+'''Send health status of edge com to server'''
+def health_check_nano(ip_edgecom):
+    try:
+        url = f"{settings.URLSV}/jetson/status/{ip_edgecom}"
+        payload="{\r\n    \"status\": true\r\n}"
+        headers = {
+        'Content-Type': 'application/json'
+        }
+        response = requests.request("PUT", url, headers=headers, data=payload)
+        print("[INFO] Send health check done ✅!")
+    except:
+        print("[INFO] Send health check fail ❌!")
+        print('[INFO] Error:')
+        traceback.print_exc() 
+        pass
+
+
+def detect_v5_1(image, ip_camera, pts, conf_thres, iou_thres, model, pt, bs, imgsz, names, stride, json_object):
+    try:
+        input_image = f'{settings.IMAGE_FOLDER}/original.jpg' # original image path
+        cv2.imwrite(input_image, image) # save original imag
+        classified = get_detected_object_v5(input_image, conf_thres, iou_thres, model, pt, bs, imgsz, names, stride, json_object, allow_classes=0) # objects detection on image with yolov5s        
+        if len(classified) != 0:
+            classified_overlap = check_overlap(classified, pts)  
+            if len(classified_overlap) != 0:
+                im_draw_warning_area = draw_warning_area(image, pts) # image drawing warning area
+                im_show = draw_object_bboxes(im_draw_warning_area, classified_overlap, json_object) # image drawing object bboxes
+                cv2.imwrite(f'{settings.IMAGE_FOLDER}/detected.jpg', im_show)
+                
+                # get infomation
+                status, messages = get_message(classified_overlap, json_object)
+                try:
+                    print('[INFO] Detected 🆘!')
+                    post_notification(status, ip_camera, messages) # send notification to server
+                except UnboundLocalError:
+                    pass
+     
+        else:
+            print('[INFO] Good ✅!')
+    except:
+        print("[INFO] Detect object failed ❌.")
+        print('[INFO] Error:')
+        traceback.print_exc() 
+
+
+def detect_v5_2(image, ip_camera, pts, conf_thres, iou_thres, model, pt, bs, imgsz, names, stride, model2, pt2, bs2, imgsz2, names2, stride2, json_object):
+    try:
+        input_image = f'{settings.IMAGE_FOLDER}/original.jpg' # original image path
+        cv2.imwrite(input_image, image) # save original image
+
+        classified1 = get_detected_object_v5(input_image, conf_thres, iou_thres, model, pt, bs, imgsz, names, stride, json_object, allow_classes=2) # objects detection with model 1
+        classified2 = get_detected_object_v5(input_image, conf_thres, iou_thres, model2, pt2, bs2, imgsz2, names2, stride2, json_object, allow_classes=1) # objects detection with model 2
+        classified = classified1 + classified2 # combine 2 results
+        if len(classified) != 0:
+            classified_overlap = check_overlap(classified, pts)  
+            if len(classified_overlap) != 0:
+                im_draw_warning_area = draw_warning_area(image, pts) # image drawing warning area
+                im_show = draw_object_bboxes(im_draw_warning_area, classified_overlap) # image drawing object bboxes
+                cv2.imwrite(f'{settings.IMAGE_FOLDER}/detected.jpg', im_show)
+                
+                # get infomation
+                status, messages = get_message(classified_overlap, json_object)
+                try:
+                    print('[INFO] Detected 🆘!')
+                    post_notification(status, ip_camera, messages) # send notification to server
+                except UnboundLocalError:
+                    pass
+     
+        else:
+            print('[INFO] Good ✅!')
+    except:
+        print("[INFO] Detect object failed ❌.")
+        print('[INFO] Error:')
+        traceback.print_exc()
+
+
+def detect_v8(image, ip_camera, pts, conf_thres, iou_thres, model, imgsz, stride, json_object):
+    try:
+        input_image = f'{settings.IMAGE_FOLDER}/original.jpg' # original image path
+        cv2.imwrite(input_image, image) # save original image
+        classified = get_detected_object_v8(input_image, conf_thres, iou_thres, model, imgsz, stride, json_object) # objects detection on image with yolov8            
+        if len(classified) != 0:
+            classified_overlap = check_overlap(classified, pts)  
+            if len(classified_overlap) != 0:
+                im_draw_warning_area = draw_warning_area(image, pts) # image drawing warning area
+                im_show = draw_object_bboxes(im_draw_warning_area, classified_overlap, json_object) # image drawing object bboxes
+                cv2.imwrite(f'{settings.IMAGE_FOLDER}/detected.jpg', im_show)
+                
+                # get infomation
+                status, messages = get_message(classified_overlap, json_object)
+                try:
+                    print('[INFO] Detected 🆘!')
+                    post_notification(status, ip_camera, messages) # send notification to server
+                except UnboundLocalError:
+                    pass
+     
+        else:
+            print('[INFO] Good ✅!')
+    except:
+        print("[INFO] Detect object failed ❌.")
+        print('[INFO] Error:')
+        traceback.print_exc()
+
+'''Update information from server into json file'''
+def get_information_from_server(ip_camera, ip_edcom):
+    try:
+        url = f"https://tcamera.thinklabs.com.vn/api/camera/getCameraByIp/{ip_camera}"
+
+        payload="{\r\n    \"jetson_ip_address\":\"" + f"{ip_edcom}" "\"\r\n}"
+        headers = {
+        'Content-Type': 'application/json'
+        }
+
+        response = requests.request("GET", url, headers=headers, data=payload)
+
+        info = response.text
+        res = json.loads(info)
+        for information in res['data']:
+            camera_name = information['name']
+            time_detect = information['identification_time']
+            brand_name = information['type_id']['brand']
+            api_name = information['api_name']
+            coor = information['detect_point']
+
+        json_file = open(os.path.join(os.getcwd(), 'info.json'), "r")
+        data = json.load(json_file)
+        json_file.close()
+        data['name_camera'] = camera_name     
+        data['identification_time'] = time_detect
+        data['api_name'] = api_name
+        data['type_camera'] = brand_name
+        data['coordinate'] = coor
+
+        # Save our changes to JSON file
+        json_file = open(os.path.join(os.getcwd(), 'info.json'), "w+")
+        json_file.write(json.dumps(data, indent = 5))
+        json_file.close()
+        print('[INFO] Update information from server done ✅.')
+
+    except:
+        print("[INFO] Update information from server failed ❌.")
+        print('[INFO] Error:')
+        traceback.print_exc()   
+
+
+'''Write H and W to json file'''
+def update_frame_dimension(HEIGHTCAM, WIDTHCAM, IPCAM):
+    try:
+        url = f"https://tcamera.thinklabs.com.vn/api/camera/updateSizeCamera/{IPCAM}"
+
+        payload = json.dumps({
+        "cam_width": WIDTHCAM,
+        "cam_height": HEIGHTCAM
+        })
+        headers = {
+        'Content-Type': 'application/json'
+        }
+
+        response = requests.request("PUT", url, headers=headers, data=payload)        
+        print('[INFO] Update H and W to server done ✅.')
+    except:
+        print("[INFO] Update H and W to server failed ❌.")
+        print('[INFO] Error:')
+        traceback.print_exc()
+
+
+'''Ping to check internet'''
+def checking_internet():
+    status = ''
+    while(True):
+        try:
+            url('https://google.com.vn/', timeout=3)
+            status = True
+        except Exception as e:
+            status = False
+        
+        if status == True:
+            print('[INFO] Internet is available ✅.')
+            break
+        else:
+            print('[INFO] Internet is not available ❌.')
+            time.sleep(5)
+            continue
+
+
+'''Ping to check camera'''
+def checking_camera(URL):
+    while(True):
+        cap = VideoStream(URL).start()
+        grabbed, frame = cap.read()
+        if grabbed:
+            print('[INFO] Connect camera done ✅.')
+            cap.stop()
+            break
+        else:
+            print('[INFO] Fail, connect camera again ❌ ...')
+            for i in range(5):
+                print(f'Time: {i+1}s')
+                time.sleep(1)
+            continue
+
+    cap.stop()
+
+    return grabbed, frame
+
+
 
 '''Check if bbox of object touch to warning area'''
 def check_overlap(classified, PTS_Area):

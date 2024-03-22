@@ -15,7 +15,6 @@ class Settings(BaseSettings):
     IOU_THRES: float = 0.65 # NMS IOU threshold
     FRAME_RATE: int = 1 # Frame per second
     OPTION: int = 2 # 1: Using 1 Model; 2: Using 2 Model
-    TYPE_YOLO: int = 1 # 1: Using v5; 2: Using v8
 
 settings = Settings()
 settings.IMAGE_FOLDER: str = os.path.join(settings.RESOURCES, 'images')

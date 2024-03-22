@@ -49,11 +49,12 @@ def get_detected_object(source, conf_thres, iou_thres, model, imgsz, stride):
         cv2.waitKey(1)
         im = annotator.result()
         cv2.imshow("Test", im)
-        cv2.waitKey(0)
+        cv2.waitKey(1)
     return classified
 
-model = YOLO("yolov5l.pt", "detect")
+model = YOLO("resources/weight_init/fire.pt", "detect")
 path = "datatest/images/ezviz.png"
-image = cv2.imread(path)
+vid_path = "data/videos/J52222411_1_videocut_1710749241.mp4"
+image = cv2.imread(vid_path)
 x = get_detected_object(image, 0.5, 0.5, model, 640, 1)
 print(x)

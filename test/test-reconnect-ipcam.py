@@ -1,7 +1,11 @@
+import os
+import sys
+WORKING_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.join(WORKING_DIR, "../"))
 import cv2
-import datetime
 import time
-# from utils.function import VideoStream
+import datetime
+from utils.function import VideoStream
 
 def reset_attempts():
     return 50
@@ -10,9 +14,8 @@ def process_video(attempts, camera):
 
     while(True):
         (grabbed, frame) = camera.read()
-
         if not grabbed:
-            print("Disconnected!")
+            print("[INFO] Disconnected!")
             camera.release()
 
             if attempts > 0:
@@ -21,7 +24,7 @@ def process_video(attempts, camera):
             else:
                 return False
         else:
-            cv2.imshow('video output', cv2.resize(frame,(1080, 720)))
+            cv2.imshow('* LIVE *', cv2.resize(frame, (1080, 720)))
             if cv2.waitKey(1) & 0XFF == ord('q'):
                 break
 
@@ -29,13 +32,10 @@ def connect_camera(URL):
     recall = True
     attempts = reset_attempts()
 
-
     while(recall):
-        # camera = cv2.VideoCapture('rtsp://admin:CHBAJT@10.10.10.36:554/live0.264')
-        # camera = VideoStream(URL).start()
-        camera = cv2.VideoCapture(URL)
+        camera = VideoStream(URL).start()
 
-        if camera.isOpened():
+        if camera.open().isOpened():
             print("[INFO] Camera connected at " +
                 datetime.datetime.now().strftime("%m-%d-%Y %I:%M:%S%p"))
             attempts = reset_attempts()
@@ -45,24 +45,34 @@ def connect_camera(URL):
                 datetime.datetime.now().strftime("%m-%d-%Y %I:%M:%S%p"))
             camera.release()
             attempts -= 1
-            print("Attempts: " + str(attempts))
+            print("[INFO] Attempts: " + str(attempts))
 
             # give the camera some time to recover
-            time.sleep(5)
+            for i in range(5):
+                print(f'Time: {i+1}s')
+                time.sleep(1)
             continue
 
-'''Camera Ezviz'''
-# URL = 'rtsp://admin:CHBAJT@10.10.10.36:554/onvif1'
-
-'''Camera Trong Hau'''
-# URL = 'rtsp://admin:Admin12345@tronghau8.kbvision.tv:37779/cam/realmonitor?channel=1&subtype=0'
-
-'''Camera HIK'''
-USER = 'admin'
-PASSWORD = 'thinklabs@36'
-IPADDRESS = '10.10.10.29'
-PORT = '554'
-URL = f"rtsp://{USER}:{PASSWORD}@{IPADDRESS}:{PORT}/cam/realmonitor?channel=1&subtype=1"        
 
 
-connect_camera(URL)
+if __name__ == "__main__":
+    '''------------------------------------------------------------------------------------'''
+    # replace with your ip address
+    USER = 'admin'
+    PASSWORD = 'thinklabs@36'
+    IPADDRESS = '10.10.10.29'
+    PORT = '554'
+    RTSP_FORMAT = 'Streaming/Channels/101'
+    URL = f"rtsp://{USER}:{PASSWORD}@{IPADDRESS}:{PORT}/{RTSP_FORMAT}"
+
+    # HIK
+    # Streaming/Channels/101
+
+    # Dahua
+    # cam/realmonitor?channel=1&subtype=1
+
+    # Ezviz
+    # onvif1
+    '''------------------------------------------------------------------------------------'''    
+    
+    connect_camera(URL)

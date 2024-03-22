@@ -25,6 +25,7 @@ datatest/images*
 datatest/results*
 resources/data/*
 resources/trained_server/*
+resources/weight_init/*
 test/images/objects*
 test/images/detected*
 # test/*

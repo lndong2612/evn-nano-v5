@@ -10,11 +10,13 @@ import threading
 from config import settings
 from flask_cors import CORS
 from datetime import datetime
-from imutils.video import VideoStream
 from detect import load_model
+from imutils.video import VideoStream
 from flask import Flask, jsonify, Response, request
-from utils.function import (detect_method, detect_method2, health_check_nano, get_information_from_server , 
-                            update_frame_dimension, initialize_information_to_server, checking_internet, camera_type, checking_camera)
+from utils.function import (detect_v5_1, detect_v5_2, health_check_nano, get_information_from_server , 
+                            update_frame_dimension, checking_internet, checking_camera)
+''' cuda device, i.e. 0 or 0,1,2,3 or cpu'''
+device = '' 
 
 
 print("[INFO] Run module AI ...")
@@ -29,12 +31,14 @@ cmd_auto_reboot = 'shutdown -r 05:00'
 os.system(cmd_auto_reboot)
 
 
-''' cuda device, i.e. 0 or 0,1,2,3 or cpu'''
-device = '' 
+option_model = settings.OPTION
 
-option_model = settings.OPTION # NMS IOU threshold
 
-# time.sleep(30)
+'''Wait computer detect sim card'''
+print("[INFO] Wait for the sim card to be activated ...")
+for i in range(30):
+    print(f'Time: {i+1}s')
+    time.sleep(1)
 
 
 '''Open network on sim 4G '''
@@ -57,7 +61,10 @@ with open(os.path.join(os.getcwd(), 'info.json'), "r") as outfile:
     info_json = json.load(outfile)
     IPCAM = info_json['ip_camera']
     IPEDGECOM = info_json['ip_edgecom']
-
+    USERCAM = info_json['user_camera']
+    PASSWORDCAM = info_json['password_camera']
+    PORTCAM = info_json['port_camera']
+    RTSP_FORMAT = info_json['rtsp_format']
 
 '''Get information from server and update into json file'''
 get_information_from_server(IPCAM, IPEDGECOM)
@@ -68,30 +75,32 @@ with open(os.path.join(os.getcwd(), 'info.json'), "r") as outfile:
     API_NAME = info_json['api_name']
 
 '''Check camera type to get URL'''
-# URL = camera_type()
-URL = 'rtsp://admin:L2A704B1@10.10.40.3:554/cam/realmonitor?channel=1&subtype=0&unicast=true&proto=Onvif'
-app = Flask(__name__)
-CORS(app)
+URL = f'rtsp://{USERCAM}:{PASSWORDCAM}@{IPCAM}:{PORTCAM}/{RTSP_FORMAT}'
+print(f'[INFO] URL Stream: {URL}')
 
 
 '''Load frame from camera to get H and W'''
-# cap = VideoStream(URL).start()
-frame, grabbed = checking_camera(URL)
-# frame = cap.read()
+print(f'[INFO] Checking connect to camera ...')
+_, frame = checking_camera(URL)
 height = frame.shape[0]
 width = frame.shape[1]
-update_frame_dimension(height, width) # Write H and W to json file
-# cap.stop()
+update_frame_dimension(height, width, IPCAM) # Write H and W to json file
 
+
+'''Load camera'''
 cap = VideoStream(URL).start()
 
-'''Initialize the camera for the first time on the server with information from the json file'''
-with open(os.path.join(os.getcwd(), 'info.json'), "r") as outfile:
-    info_json = json.load(outfile)
-    initialize_information_to_server(info_json)
+
+'''Load file json about object'''
+with open('object.json', 'r', encoding='utf-8') as outfile:
+    json_object = json.load(outfile)
 
 
-# time.sleep(5)
+time.sleep(5)
+
+
+app = Flask(__name__)
+CORS(app)
 
 
 @app.route('/')
@@ -103,13 +112,12 @@ def index():
 def detect(ip_camera, option_model):
     conf_thres = settings.CONF_THRES # confidence threshold
     iou_thres = settings.IOU_THRES # NMS IOU threshold
-    print(f'Option: {option_model} model')
+    print(f'Option: {option_model} model.')
     if option_model == 1:
         """Detect object on input image"""
         weight_path = os.path.join(settings.MODEL, 'best.pt') # model path
         model, pt, bs, imgsz, names, stride = load_model(weight_path, device, settings.DATA_COCO)  
         while True:
-            # cap_detect = VideoStream(URL).start()
             with open(os.path.join(os.getcwd(), 'info.json'), "r") as outfile:
                 info_json = json.load(outfile)
                 PTS = info_json['coordinate']
@@ -118,7 +126,7 @@ def detect(ip_camera, option_model):
             named_tuple = time.localtime() 
             time_string = time.strftime("%d-%m-%Y %H:%M:%S", named_tuple)
             print(f"[INFO] Detect on {time_string}.")
-            detect_method(frame_detect, ip_camera, PTS, conf_thres, iou_thres, model, pt, bs, imgsz, names, stride)
+            detect_v5_1(frame_detect, ip_camera, PTS, conf_thres, iou_thres, model, pt, bs, imgsz, names, stride, json_object)
             time.sleep(IDENTIFICATIONTIME)
 
     elif option_model == 2:
@@ -130,7 +138,6 @@ def detect(ip_camera, option_model):
         model2, pt2, bs2, imgsz2, names2, stride2 = load_model(weight_path2, device, settings.DATA_COCO)  
 
         while True:
-            # cap_detect = VideoStream(URL).start()
             with open(os.path.join(os.getcwd(), 'info.json'), "r") as outfile:
                 info_json = json.load(outfile)
                 PTS = info_json['coordinate']
@@ -139,7 +146,7 @@ def detect(ip_camera, option_model):
             named_tuple = time.localtime() 
             time_string = time.strftime("%d-%m-%Y %H:%M:%S", named_tuple)
             print(f"[INFO] Detect on {time_string}.")
-            detect_method2(frame_detect, ip_camera, PTS, conf_thres, iou_thres, model, pt, bs, imgsz, names, stride, model2, pt2, bs2, imgsz2, names2, stride2)
+            detect_v5_2(frame_detect, ip_camera, PTS, conf_thres, iou_thres, model, pt, bs, imgsz, names, stride, model2, pt2, bs2, imgsz2, names2, stride2, json_object)
             time.sleep(IDENTIFICATIONTIME)
 
 
@@ -153,30 +160,8 @@ def send_healthcheck(ip_edgecom):
         health_check_nano(ip_edgecom)
 
 
-# ''' Read the camera frame'''
-# def generate():
-#     # cap_out = VideoStream(URL).start()
-#     # cap_out = cv2.VideoCapture(URL)
-#     prev = 0 # Previous frame time
-#     while True:
-#         time_elapsed = time.time() - prev
-#         _, frame_out = cap.read()
-#         if time_elapsed > 1./settings.FRAME_RATE:
-#             prev = time.time()        
-#             (flag, encodedImage) = cv2.imencode(".jpg", frame_out)
-#             # ensure the frame was successfully encoded
-#             if not flag:
-#                 continue
-#             frame = encodedImage.tobytes()
-#             # yield the output frame in the byte format
-#             yield(b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' + 
-#                 bytearray(frame) + b'\r\n')
-
-
-
 '''Read the camera resize frame'''
 def generate_resize():
-    # cap_out_resize = VideoStream(URL).start()
     prev = 0 # Previous frame time
     while True:
         time_elapsed = time.time() - prev
@@ -197,14 +182,6 @@ def handler():
     res = input("[INFO] Ctrl-c was pressed. Do you really want to exit? y/n ")
     if res == 'y' or res == 'Y':
         exit(0)
-
-
-# @app.route(f"/api/{API_NAME}/video_feed")
-# def video_feed():
-#     # return the response generated along with the specific media
-#     # type (mime type)
-#     return Response(generate(),
-#         mimetype = "multipart/x-mixed-replace; boundary=frame")
 
 
 @app.route(f"/api/{API_NAME}/video_feed_resize")
@@ -249,10 +226,6 @@ def reboot():
         mess = '[INFO] System reboot fail ...'
         return jsonify(status_code = 400, content={"success":"false", "error": str(error)})
 
-def app_run():
-    host = settings.HOST
-    port = int(settings.PORT)
-    app.run(host=host, port=port, debug=False) 
 
 if __name__ == "__main__":
     # Start a thread that will perform object detection, send health check camera and start flask server on Edge computer
@@ -264,15 +237,10 @@ if __name__ == "__main__":
     p2.daemon = True
     p2.start()
 
-    # time.sleep(12)
-    # p3 = threading.Thread(target=app_run, args=())
-    # p3.daemon = False
-    # p3.start()
     host = settings.HOST
     port = int(settings.PORT)
     app.run(host=host, port=port, debug=False)     
    
     
 # release the video stream pointer
-# cap.stop()
 signal.signal(signal.SIGINT, handler)
