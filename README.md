@@ -43,7 +43,7 @@ Vào thư mục  `evn-nano`, tạo thư mục `resources`.
 
 Trong thư mục `resources`, tạo tiếp hai thư mục con với tên `weight_init`, `images`.
 
-Tải files mô hình AI với <a href="https://drive.google.com/drive/folders/1y9OA35H9LJ_9PNXCawJvHUDhaPX8-3d2?usp=sharing">link</a> này. Tên mô hình là `best.pt`.
+Tải files mô hình AI `V8` với <a href="https://drive.google.com/drive/folders/1yM0lagzmoVXs_THtkviMcWz57zdfva-R?usp=sharing">link</a> này. Tên mô hình là `best.pt`.
 
 File mô hình sẽ nằm trong thư mục Downloads, di chuyển file mô hình vào thư mục `evn-nano/resources/weight_init`.
 
