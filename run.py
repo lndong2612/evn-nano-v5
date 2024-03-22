@@ -11,9 +11,8 @@ from config import settings
 from flask_cors import CORS
 from datetime import datetime
 from detect import load_model
-from imutils.video import VideoStream
 from flask import Flask, jsonify, Response, request
-from utils.function import (detect_v5_1, detect_v5_2, health_check_nano, get_information_from_server , 
+from utils.function import (VideoStream, detect_v5_1, detect_v5_2, health_check_nano, get_information_from_server , 
                             update_frame_dimension, checking_internet, checking_camera)
 ''' cuda device, i.e. 0 or 0,1,2,3 or cpu'''
 device = '' 
@@ -123,7 +122,7 @@ def detect(ip_camera, option_model):
                 info_json = json.load(outfile)
                 PTS = info_json['coordinate']
                 IDENTIFICATIONTIME = info_json['identification_time']    
-            frame_detect = cap.read()
+            _, frame_detect = cap.read()
             named_tuple = time.localtime() 
             time_string = time.strftime("%d-%m-%Y %H:%M:%S", named_tuple)
             print(f"[INFO] Detect on {time_string}.")
@@ -143,7 +142,7 @@ def detect(ip_camera, option_model):
                 info_json = json.load(outfile)
                 PTS = info_json['coordinate']
                 IDENTIFICATIONTIME = info_json['identification_time']    
-            frame_detect = cap.read()
+            _, frame_detect = cap.read()
             named_tuple = time.localtime() 
             time_string = time.strftime("%d-%m-%Y %H:%M:%S", named_tuple)
             print(f"[INFO] Detect on {time_string}.")
@@ -166,7 +165,7 @@ def generate_resize():
     prev = 0 # Previous frame time
     while True:
         time_elapsed = time.time() - prev
-        frame_out_resize = cap.read()
+        _, frame_out_resize = cap.read()
         if time_elapsed > 1./settings.FRAME_RATE:
             prev = time.time()     
             frame_resize = cv2.resize(frame_out_resize, (853, 480))
