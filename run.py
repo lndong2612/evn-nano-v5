@@ -4,10 +4,10 @@ import signal
 WORKING_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(WORKING_DIR, "../"))
 import cv2
+import json
 import time
 import datetime
 import threading
-import json
 from config import settings
 from flask_cors import CORS
 from ultralytics import YOLO
