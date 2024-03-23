@@ -5,9 +5,19 @@ sys.path.append(os.path.join(WORKING_DIR, "../"))
 import cv2
 import time
 import datetime
-import threading
+import json
 from flask import Flask, Response
 from utils.function import VideoStream
+
+with open(os.path.join(os.getcwd(), 'info.json'), "r") as outfile:
+    info_json = json.load(outfile)
+    IPCAM = info_json['ip_camera']
+    IPEDGECOM = info_json['ip_edgecom']
+    USERCAM = info_json['user_camera']
+    PASSWORDCAM = info_json['password_camera']
+    PORTCAM = info_json['port_camera']
+    RTSP_FORMAT = info_json['rtsp_format']
+URL = f'rtsp://{USERCAM}:{PASSWORDCAM}@{IPCAM}:{PORTCAM}/{RTSP_FORMAT}'
 
 
 app = Flask(__name__)
@@ -81,29 +91,7 @@ def connect_camera(URL):
                 time.sleep(1)
 
             continue
-
-
-'''Camera Ezviz'''
-# URL = 'rtsp://admin:CHBAJT@10.10.10.36:554/onvif1'
-
-'''Camera Trong Hau'''
-# URL = 'rtsp://admin:Admin12345@tronghau8.kbvision.tv:37779/cam/realmonitor?channel=1&subtype=0'
-
-# USER = 'admin'
-# PASSWORD = 'CHBAJT'
-# IPADDRESS = '10.10.10.36'
-# PORT = '554'
-# RTSP_FORMAT = 'onvif1'
-
-
-'''Camera HIK'''
-USER = 'admin'
-PASSWORD = 'thinklabs@36'
-IPADDRESS = '10.10.10.29'
-PORT = '554'
-RTSP_FORMAT = 'Streaming/Channels/101'
-
-URL = f"rtsp://{USER}:{PASSWORD}@{IPADDRESS}:{PORT}/{RTSP_FORMAT}"        
+       
 
 if __name__ == "__main__":
     # p1 = threading.Thread(target=connect_camera, args=(URL, ))

@@ -25,8 +25,8 @@ URL = f'rtsp://{USERCAM}:{PASSWORDCAM}@{IPCAM}:{PORTCAM}/{RTSP_FORMAT}'
 
 app = Flask(__name__)
 
-
 cap = VideoStream(URL).start()
+
 
 @app.route('/')
 def index():
@@ -46,12 +46,29 @@ def generate_resize():
         yield(b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' + 
             bytearray(encodedImage) + b'\r\n')
 
+def generate():
+    while True:
+        '''Read the camera resize frame'''
+        (grabbed, frame) = cap.read()
+        (flag, encodedImage) = cv2.imencode(".jpg", frame)
+        # ensure the frame was successfully encoded
+        if not flag:
+            continue
+        # yield the output frame in the byte format
+        yield(b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' + 
+            bytearray(encodedImage) + b'\r\n')
 
 def handler():
     res = input("[INFO] Ctrl-c was pressed. Do you really want to exit? y/n ")
     if res == 'y' or res == 'Y':
         exit(0)
 
+@app.route("/api/video_feed")
+def video_feed():
+    # return the response generated along with the specific media
+    # type (mime type)
+    return Response(generate(),
+        mimetype = "multipart/x-mixed-replace; boundary=frame")
 
 @app.route("/api/video_feed_resize")
 def video_feed_resize():
