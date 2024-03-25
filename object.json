@@ -1,44 +1,29 @@
 {
     "english_name": [
         {"Fire": [
-            {
-                "ID": 0,
-                "length_name": "Dam_chay",
-                "vietnamese_name": "Đám cháy",
-                "conf_thres": 0.33
-            }
+            {"ID": 0},
+            {"length_name": "Dam_chay"},
+            {"vietnamese_name": "Đám cháy"}
         ]},
         {"Smoke": [
-            {
-                "ID": 1,
-                "length_name": "Cot_khoi",
-                "vietnamese_name": "Cột khói",
-                "conf_thres": 0.4
-            }
+            {"ID": 1},
+            {"length_name": "Cot_khoi"},
+            {"vietnamese_name": "Cột khói"}
         ]},
         {"Vehicle": [
-            {
-                "ID": 2,
-                "length_name": "Phuong_tien",
-                "vietnamese_name": "Phương tiện",
-                "conf_thres": 0.6
-            }
+            {"ID": 2},
+            {"length_name": "Phuong_tien"},
+            {"vietnamese_name": "Phương tiện"}
         ]},
         {"Kite": [
-            {
-                "ID": 3,
-                "length_name": "Dieu",
-                "vietnamese_name": "Diều",
-                "conf_thres": 0.6
-            }
+            {"ID": 3},
+            {"length_name": "Dieu"},
+            {"vietnamese_name": "Diều"}
         ]},
         {"Tree": [
-            {
-                "ID": 4,
-                "length_name": "Cay_coi",
-                "vietnamese_name": "Cây cối",
-                "conf_thres": 0.35
-            }
-        ]}
+            {"ID": 4},
+            {"length_name": "Cay_coi"},
+            {"vietnamese_name": "Cây cối"}
+        ]}                              
     ]
 }

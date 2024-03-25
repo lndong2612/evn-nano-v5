@@ -10,12 +10,11 @@ import threading
 from config import settings
 from flask_cors import CORS
 from datetime import datetime
+from imutils.video import VideoStream
 from detect import load_model
 from flask import Flask, jsonify, Response, request
-from utils.function import (VideoStream, detect_v5_1, detect_v5_2, health_check_nano, get_information_from_server , 
+from utils.function import (detect_method, detect_method2, health_check_nano, get_information_from_server , 
                             update_frame_dimension, checking_internet, checking_camera)
-''' cuda device, i.e. 0 or 0,1,2,3 or cpu'''
-device = '' 
 
 
 print("[INFO] Run module AI ...")
@@ -24,20 +23,18 @@ dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
 print("[INFO] Date and time computer start: ", dt_string)
 
 
-'''Auto reboot computer at 5AM '''
+'''Auto reboot computer at 6PM '''
 print("[INFO] Time to reboot computer ...")
-cmd_auto_reboot = 'shutdown -r 05:00'
+cmd_auto_reboot = 'shutdown -r 18:00'
 os.system(cmd_auto_reboot)
 
 
-option_model = settings.OPTION
+''' cuda device, i.e. 0 or 0,1,2,3 or cpu'''
+device = '' 
 
+option_model = settings.OPTION # NMS IOU threshold
 
-'''Wait computer detect sim card'''
-print("[INFO] Wait for the sim card to be activated ...")
-for i in range(30):
-    print(f'Time: {i+1}s')
-    time.sleep(1)
+time.sleep(30)
 
 
 '''Open network on sim 4G '''
@@ -65,42 +62,31 @@ with open(os.path.join(os.getcwd(), 'info.json'), "r") as outfile:
     PORTCAM = info_json['port_camera']
     RTSP_FORMAT = info_json['rtsp_format']
 
-'''Get information from server and update into json file'''
-get_information_from_server(IPCAM, IPEDGECOM)
-
 
 with open(os.path.join(os.getcwd(), 'info.json'), "r") as outfile:
     info_json = json.load(outfile)
     API_NAME = info_json['api_name']
 
-'''Check camera type to get URL'''
+
+'''Load frame from camera to get H and W'''
 URL = f'rtsp://{USERCAM}:{PASSWORDCAM}@{IPCAM}:{PORTCAM}/{RTSP_FORMAT}'
 print(f'[INFO] URL Stream: {URL}')
 
 
-'''Load frame from camera to get H and W'''
-print(f'[INFO] Checking connect to camera ...')
-_, frame = checking_camera(URL)
+app = Flask(__name__)
+CORS(app)
+
+_, frame  = checking_camera(URL)
 height = frame.shape[0]
 width = frame.shape[1]
-update_frame_dimension(height, width, IPCAM) # Write H and W to json file
+update_frame_dimension(height, width) # Write H and W to json file
 
 
-'''Load camera'''
-print(f'[INFO] Loading camera ...')
+'''Load video stream from url'''
 cap = VideoStream(URL).start()
 
 
-'''Load file json about object'''
-with open('object.json', 'r', encoding='utf-8') as outfile:
-    json_object = json.load(outfile)
-
-
 time.sleep(5)
-
-
-app = Flask(__name__)
-CORS(app)
 
 
 @app.route('/')
@@ -112,7 +98,7 @@ def index():
 def detect(ip_camera, option_model):
     conf_thres = settings.CONF_THRES # confidence threshold
     iou_thres = settings.IOU_THRES # NMS IOU threshold
-    print(f'[INFO] Option: {option_model} model' + 's.' if option_model > 1 else + '.')
+    print(f'Option: {option_model} model')
     if option_model == 1:
         """Detect object on input image"""
         weight_path = os.path.join(settings.MODEL, 'best.pt') # model path
@@ -122,19 +108,20 @@ def detect(ip_camera, option_model):
                 info_json = json.load(outfile)
                 PTS = info_json['coordinate']
                 IDENTIFICATIONTIME = info_json['identification_time']    
-            _, frame_detect = cap.read()
+            frame_detect = cap.read()
+            
             named_tuple = time.localtime() 
             time_string = time.strftime("%d-%m-%Y %H:%M:%S", named_tuple)
             print(f"[INFO] Detect on {time_string}.")
-            detect_v5_1(frame_detect, ip_camera, PTS, conf_thres, iou_thres, model, pt, bs, imgsz, names, stride, json_object)
+            detect_method(frame_detect, ip_camera, PTS, conf_thres, iou_thres, model, pt, bs, imgsz, names, stride)
             time.sleep(IDENTIFICATIONTIME)
 
     elif option_model == 2:
         """Detect object on input image"""
-        weight_path = os.path.join(settings.MODEL, 'fire.pt') # model path
+        weight_path = os.path.join(settings.MODEL, 'best.pt') # model path
         model, pt, bs, imgsz, names, stride = load_model(weight_path, device, settings.DATA_COCO)  
 
-        weight_path2 = os.path.join(settings.MODEL, 'best.pt') # model path
+        weight_path2 = os.path.join(settings.MODEL, 'fire.pt') # model path
         model2, pt2, bs2, imgsz2, names2, stride2 = load_model(weight_path2, device, settings.DATA_COCO)  
 
         while True:
@@ -142,13 +129,13 @@ def detect(ip_camera, option_model):
                 info_json = json.load(outfile)
                 PTS = info_json['coordinate']
                 IDENTIFICATIONTIME = info_json['identification_time']    
-            _, frame_detect = cap.read()
+            frame_detect = cap.read()
+            
             named_tuple = time.localtime() 
             time_string = time.strftime("%d-%m-%Y %H:%M:%S", named_tuple)
             print(f"[INFO] Detect on {time_string}.")
-            detect_v5_2(frame_detect, ip_camera, PTS, conf_thres, iou_thres, model, pt, bs, imgsz, names, stride, model2, pt2, bs2, imgsz2, names2, stride2, json_object)
+            detect_method2(frame_detect, ip_camera, PTS, conf_thres, iou_thres, model, pt, bs, imgsz, names, stride, model2, pt2, bs2, imgsz2, names2, stride2)
             time.sleep(IDENTIFICATIONTIME)
-
 
 '''Send health check camera to server'''
 def send_healthcheck(ip_edgecom):
@@ -156,16 +143,17 @@ def send_healthcheck(ip_edgecom):
         time.sleep(60)
         named_tuple = time.localtime() 
         time_string = time.strftime("%d-%m-%Y %H:%M:%S", named_tuple)
-        print(f"[INFO] Health check notification is being sent out on {time_string}.")  
+        print(f"[INFO] Sending health check notification on {time_string}.")  
         health_check_nano(ip_edgecom)
 
 
 '''Read the camera resize frame'''
 def generate_resize():
+    # cap_out_resize = VideoStream(URL).start()
     prev = 0 # Previous frame time
     while True:
         time_elapsed = time.time() - prev
-        _, frame_out_resize = cap.read()
+        frame_out_resize = cap.read()
         if time_elapsed > 1./settings.FRAME_RATE:
             prev = time.time()     
             frame_resize = cv2.resize(frame_out_resize, (853, 480))
@@ -197,11 +185,11 @@ def download():
     try:
         file = request.files['file']
         file.save('./resources/weight_init/best.pt')
-        mess = '[INFO] Model saved successfully ✅.'
+        mess = '[INFO] Model saved!'
         os.system("shutdown -r -t 10")
         return jsonify(status_code = 200, content={'message':mess})
     except SystemError as error:
-        mess = '[INFO] Model saved fail ❌ ...'
+        mess = '[INFO] Save model fail ...'
         return jsonify(status_code = 400, content={"success":"false", "error": str(error)})
 
 
@@ -209,10 +197,10 @@ def download():
 def update_info():
     try:
         get_information_from_server(IPCAM, IPEDGECOM)
-        mess = '[INFO] Updated information successfully ✅.'
+        mess = '[INFO] Update information done!'
         return jsonify(status_code = 200, content={'message':mess})
     except SystemError as error:
-        mess = '[INFO] Updated information fail ❌ ...'
+        mess = '[INFO] Update information fail ...'
         return jsonify(status_code = 400, content={"success":"false", "error": str(error)})
 
 
@@ -228,7 +216,7 @@ def reboot():
 
 
 if __name__ == "__main__":
-    # Start a thread that will perform object detection, send health check camera and start flask server on Edge computer
+    #Start a thread that will perform object detection, send health check camera and start flask server on Edge computer
     p1 = threading.Thread(target=detect, args=(IPCAM, option_model, ))
     p1.daemon = True
     p1.start()
@@ -237,10 +225,12 @@ if __name__ == "__main__":
     p2.daemon = True
     p2.start()
 
+    time.sleep(10)
+
     host = settings.HOST
     port = int(settings.PORT)
     app.run(host=host, port=port, debug=False)     
-   
     
 # release the video stream pointer
+# cap.stop()
 signal.signal(signal.SIGINT, handler)

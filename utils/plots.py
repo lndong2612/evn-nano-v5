@@ -1,4 +1,4 @@
-# YOLOv5 🚀 by Ultralytics, AGPL-3.0 license
+# YOLOv5 ðŸš€ by Ultralytics, AGPL-3.0 license
 """
 Plotting utils
 """
@@ -332,7 +332,7 @@ def imshow_cls(im, labels=None, pred=None, names=None, nmax=25, verbose=False, f
         ax[i].imshow(blocks[i].squeeze().permute((1, 2, 0)).numpy().clip(0.0, 1.0))
         ax[i].axis('off')
         if labels is not None:
-            s = names[labels[i]] + (f'—{names[pred[i]]}' if pred is not None else '')
+            s = names[labels[i]] + (f'â€”{names[pred[i]]}' if pred is not None else '')
             ax[i].set_title(s, fontsize=8, verticalalignment='top')
     plt.savefig(f, dpi=300, bbox_inches='tight')
     plt.close()
@@ -447,40 +447,24 @@ def save_one_box(xyxy, im, file=Path('im.jpg'), gain=1.02, pad=10, square=False,
         Image.fromarray(crop[..., ::-1]).save(f, quality=95, subsampling=0)  # save RGB
     return crop
 
-# def convert_name_id(eng_name, option):
-#     output = ''
-#     with open('object.json', 'r',encoding='utf-8') as outfile:
-#         json_object = json.load(outfile)
-#         for info in json_object['english_name']:
-#             try:
-#                 if option == 'length_name':
-#                     output = info[eng_name][1]['length_name']
-#                 elif option == 'ID':
-#                     output = info[eng_name][0]['ID']
-#                 elif option == 'vietnamese_name':
-#                     output = info[eng_name][2]['vietnamese_name']                   
-#             except Exception:
-#                 pass    
-    
-#     return output
-
-
-def convert_name_id(eng_name, option, json_object):
+def convert_name_id(eng_name, option):
     output = ''
-    for item in json_object["english_name"]:
-        for key in item:
-            if key == eng_name and option == 'length_name':
-                output = item[key][0]["length_name"]
-            elif key == eng_name and option == 'ID':
-                output = item[key][0]["ID"]
-            elif key == eng_name and option == 'vietnamese_name':
-                output = item[key][0]["vietnamese_name"]
-            elif key == eng_name and option == 'conf_thres':
-                output = item[key][0]["conf_thres"]                          
+    with open('object.json', 'r',encoding='utf-8') as outfile:
+        json_object = json.load(outfile)
+        for info in json_object['english_name']:
+            try:
+                if option == 'length_name':
+                    output = info[eng_name][1]['length_name']
+                elif option == 'ID':
+                    output = info[eng_name][0]['ID']
+                elif option == 'vietnamese_name':
+                    output = info[eng_name][2]['vietnamese_name']                            
+            except Exception:
+                pass    
+    
     return output
 
-
-def draw_object_bboxes(im, classified, json_object):
+def draw_object_bboxes(im, classified):
     image_h, image_w, _ = im.shape
     bbox_thick = int(0.6 * (image_h + image_w) / 400)
     cv2_im_rgb = cv2.cvtColor(im, cv2.COLOR_BGR2RGB) # Convert the image to RGB (OpenCV uses BGR)
@@ -495,7 +479,7 @@ def draw_object_bboxes(im, classified, json_object):
         ymin = info['ymin']
         xmax = info['xmax']
         ymax = info['ymax']
-        ID = convert_name_id(info['label'], 'ID', json_object)
+        ID = convert_name_id(info['label'], 'ID')
         c1, c2 = (xmin, ymin), (xmax, ymax)
         draw.rectangle([c1, c2], outline = bbox_color[ID], width = bbox_thick)# Draw bbox on image
 
@@ -505,11 +489,11 @@ def draw_object_bboxes(im, classified, json_object):
         ymin = info['ymin']
         xmax = info['xmax']
         ymax = info['ymax']
-        ID = convert_name_id(info['label'], 'ID', json_object)
+        ID = convert_name_id(info['label'], 'ID')
         c1, c2 = (xmin, ymin), (xmax, ymax)
         object_score = float(info['score'])*100
-        bbox_mess = '%s - %s' % (convert_name_id(info['label'], 'length_name', json_object), int(object_score)) + '%'
-        final_bbox_mess = '%s - %s' % (convert_name_id(info['label'], 'vietnamese_name', json_object), int(object_score)) + '%'
+        bbox_mess = '%s - %s' % (convert_name_id(info['label'], 'length_name'), int(object_score)) + '%'
+        final_bbox_mess = '%s - %s' % (convert_name_id(info['label'], 'vietnamese_name'), int(object_score)) + '%'
         t_size = cv2.getTextSize(bbox_mess, 0, 0.5, thickness=bbox_thick // 2)[0]
         if ymin <= 10:
             draw.rectangle([(xmin, ymax), (xmin + t_size[0], ymax + 2*t_size[1])], fill = bbox_color[ID])# fill
@@ -522,8 +506,7 @@ def draw_object_bboxes(im, classified, json_object):
 
     return img
 
-# Draw the warning area on the image
-def draw_warning_area(im, pts):
+def draw_detect_bboxes(im, pts):
     image_h, image_w, _ = im.shape
     bbox_thick = int(0.6 * (image_h + image_w) / 600)
     if len(pts) >= 3:    
@@ -541,11 +524,11 @@ def draw_warning_area(im, pts):
 
     return im
 
-def information(classified, json_object):
+def information(classified):
     for i in range(len(classified)):
         info = classified[i]
         info2 = info.copy()
         info['label_EN'] = info2['label']
-        info['label'] = convert_name_id(info2['label'], 'vietnamese_name', json_object)
+        info['label'] = convert_name_id(info2['label'], 'vietnamese_name')
 
     return classified
