@@ -28,7 +28,7 @@ print("[INFO] Date and time computer start: ", dt_string)
 
 '''Auto reboot computer at 5AM '''
 print("[INFO] Time to reboot computer ...")
-cmd_auto_reboot = 'shutdown -r 05:00'
+cmd_auto_reboot = 'shutdown -r 18:00'
 os.system(cmd_auto_reboot)
 
 
