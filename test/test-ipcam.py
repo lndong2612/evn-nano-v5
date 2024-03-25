@@ -15,7 +15,9 @@ with open(os.path.join(os.getcwd(), 'info.json'), "r") as outfile:
     PASSWORDCAM = info_json['password_camera']
     PORTCAM = info_json['port_camera']
     RTSP_FORMAT = info_json['rtsp_format']
+
 URL = f'rtsp://{USERCAM}:{PASSWORDCAM}@{IPCAM}:{PORTCAM}/{RTSP_FORMAT}'
+print(f'[INFO] RTSP: {URL}')
 os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = 'rtsp_transport;udp'
 
 cap = VideoStream(URL).start()
