@@ -1,8 +1,11 @@
 """Access IP Camera in Python OpenCV"""
 import os
+import sys
+WORKING_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.join(WORKING_DIR, "../"))
 import cv2
 import json
-from imutils.video import VideoStream
+from utils.function import VideoStream
 
 with open(os.path.join(os.getcwd(), 'info.json'), "r") as outfile:
     info_json = json.load(outfile)
@@ -17,8 +20,8 @@ os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = 'rtsp_transport;udp'
 
 cap = VideoStream(URL).start()
 while True:
-    img = cap.read()
-    cv2.imshow('Camera', img)
+    (grabbed, frame) = cap.read()
+    cv2.imshow('Camera', frame)
     if cv2.waitKey(1) &0XFF == ord('q'):
        break
 
