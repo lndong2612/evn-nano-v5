@@ -10,7 +10,7 @@ import threading
 from config import settings
 from flask_cors import CORS
 from datetime import datetime
-from detect import load_model
+from load_model import load_model
 from flask import Flask, jsonify, Response, request
 from utils.function import (VideoStream, detect_v5_1, detect_v5_2, health_check_nano, get_information_from_server , 
                             update_frame_dimension, checking_internet, checking_camera)
@@ -112,7 +112,7 @@ def index():
 def detect(ip_camera, option_model):
     conf_thres = settings.CONF_THRES # confidence threshold
     iou_thres = settings.IOU_THRES # NMS IOU threshold
-    print(f'[INFO] Option: {option_model} model' + 's.' if option_model > 1 else + '.')
+    print(f'[INFO] Option: {option_model} model{"s" if int(option_model) > 1 else ""}.')
     if option_model == 1:
         """Detect object on input image"""
         weight_path = os.path.join(settings.MODEL, 'best.pt') # model path

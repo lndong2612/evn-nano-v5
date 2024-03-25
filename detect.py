@@ -1,21 +1,10 @@
 import os
 os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
-import sys
 import torch
 import numpy as np
-from pathlib import Path
-import torch.backends.cudnn as cudnn
-
-FILE = Path(__file__).resolve()
-ROOT = FILE.parents[0]  # YOLOv5 root directory
-if str(ROOT) not in sys.path:
-    sys.path.append(str(ROOT))  # add ROOT to PATH
-ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
-
-from models.common import DetectMultiBackend
 from utils.dataloaders import LoadImages
-from utils.general import (LOGGER, Profile, check_img_size, non_max_suppression, scale_boxes)
-from utils.torch_utils import select_device, smart_inference_mode
+from utils.general import (Profile, non_max_suppression, scale_boxes)
+from utils.torch_utils import smart_inference_mode
 from utils.plots import convert_name_id
 @smart_inference_mode()
 
@@ -40,18 +29,18 @@ def clip_boxes(boxes, shape):
         boxes[..., [0, 2]] = boxes[..., [0, 2]].clip(0, shape[1])  # x1, x2
         boxes[..., [1, 3]] = boxes[..., [1, 3]].clip(0, shape[0])  # y1, y2
 
-# Load model
-def load_model(weights, device, data):
-    data = str(ROOT / data)
-    weights = str(ROOT / weights)
-    device = select_device(device)
-    imgsz=(640, 640) # inference size (height, width)
-    model = DetectMultiBackend(weights, device=device, dnn=False, data=data, fp16=False)
-    stride, names, pt = model.stride, model.names, model.pt
-    imgsz = check_img_size(imgsz, s=stride)  # check image size
-    bs = 1  # batch_size
+# # Load model
+# def load_model(weights, device, data):
+#     data = str(ROOT / data)
+#     weights = str(ROOT / weights)
+#     device = select_device(device)
+#     imgsz=(640, 640) # inference size (height, width)
+#     model = DetectMultiBackend(weights, device=device, dnn=False, data=data, fp16=False)
+#     stride, names, pt = model.stride, model.names, model.pt
+#     imgsz = check_img_size(imgsz, s=stride)  # check image size
+#     bs = 1  # batch_size
     
-    return model, pt, bs, imgsz, names, stride
+#     return model, pt, bs, imgsz, names, stride
 
 # Detect object
 def get_detected_object_v5(source, conf_thres, iou_thres, model, pt, bs, imgsz, names, stride, json_object, allow_classes):
