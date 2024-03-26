@@ -180,37 +180,50 @@ def update_frame_dimension(height, width):
         traceback.print_exc()      
 
 
-# Ping to check internet
+'''Ping to check internet'''
 def checking_internet():
     status = ''
+    count_seconds = 0
     while(True):
         try:
-            url('https://google.com.vn/', timeout=3)
+            url('https://google.com.vn/', timeout=3) # UBUNTU
             status = True
         except Exception as e:
             status = False
         
         if status == True:
-            print('[INFO] Internet is available.')
+            print('[INFO] Internet is available .')
             break
         else:
-            print('[INFO] Internet is not available.')
-            time.sleep(5)
+            print('[INFO] Internet is not available .')
+            print(f'[INFO] Time left to reboot if there is no internet connection: {180 - count_seconds}s.')
+            for i in range(5):
+                print(f'Time: {i+1}s')
+                time.sleep(1)
+                count_seconds += 1
+
+            if count_seconds == 180:
+                os.system("sudo reboot")
+            
             continue
 
-# Ping to check camera
+'''Ping to check camera'''
 def checking_camera(URL):
     while(True):
         cap = VideoStream(URL).start()
         grabbed, frame = cap.read()
         if grabbed:
-            print('[INFO] Connect camera done!!')
+            print('[INFO] Connected camera successfully .')
             cap.stop()
             break
         else:
-            print('[INFO] Fail, connect camera again ...')
-            time.sleep(5)
+            print('[INFO] Connected camera fail, again ...')
+            for i in range(5):
+                print(f'Time: {i+1}s')
+                time.sleep(1)
             continue
+
+    cap.stop()
 
     return grabbed, frame
 
