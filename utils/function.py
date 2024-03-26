@@ -9,7 +9,6 @@ import requests
 import traceback
 from config import settings
 from threading import Thread
-from detect import get_detected_object
 from shapely.geometry import Polygon
 from detect import get_detected_object
 from urllib.request import urlopen as url
