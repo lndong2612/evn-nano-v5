@@ -34,7 +34,11 @@ device = ''
 
 option_model = settings.OPTION # NMS IOU threshold
 
-time.sleep(30)
+'''Wait computer detect sim card'''
+print("[INFO] Wait for the sim card to be activated ...")
+for i in range(30):
+    print(f'Time: {i+1}s')
+    time.sleep(1)
 
 
 '''Open network on sim 4G '''
@@ -51,6 +55,20 @@ except Exception as e:
 '''Check internet available or not'''
 print("[INFO] Checking internet ...")
 checking_internet()
+
+
+'''Create images and weight_int in resources'''
+print("[INFO] Create images and weight_int in resources ...")
+path_resources = 'resources'
+path_images = f'{path_resources}/images'
+try:
+    os.mkdir(path_resources)
+except FileExistsError:
+    pass
+try:
+    os.mkdir(path_images)
+except FileExistsError:
+    pass
 
 
 with open(os.path.join(os.getcwd(), 'info.json'), "r") as outfile:
@@ -98,7 +116,7 @@ def index():
 def detect(ip_camera, option_model):
     conf_thres = settings.CONF_THRES # confidence threshold
     iou_thres = settings.IOU_THRES # NMS IOU threshold
-    print(f'Option: {option_model} model')
+    print(f'[INFO] Option: {option_model} model{"s" if int(option_model) > 1 else ""}.')
     if option_model == 1:
         """Detect object on input image"""
         weight_path = os.path.join(settings.MODEL, 'best.pt') # model path
@@ -149,7 +167,6 @@ def send_healthcheck(ip_edgecom):
 
 '''Read the camera resize frame'''
 def generate_resize():
-    # cap_out_resize = VideoStream(URL).start()
     prev = 0 # Previous frame time
     while True:
         time_elapsed = time.time() - prev
@@ -232,5 +249,4 @@ if __name__ == "__main__":
     app.run(host=host, port=port, debug=False)     
     
 # release the video stream pointer
-# cap.stop()
 signal.signal(signal.SIGINT, handler)
