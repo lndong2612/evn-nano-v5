@@ -1,15 +1,9 @@
-# YOLOv5 🚀 by Ultralytics, AGPL-3.0 license
-"""
-Plotting utils
-"""
 from pathlib import Path
 import cv2
 import numpy as np
 import torch
 from PIL import ImageFont, ImageDraw, Image
 from utils.general import clip_boxes, increment_path, xywh2xyxy, xyxy2xywh
-# -*- coding: utf8 -*-
-# Settings
 
 def save_one_box(xyxy, im, file=Path('im.jpg'), gain=1.02, pad=10, square=False, BGR=False, save=True):
     # Save image crop as {file} with crop size multiple {gain} and {pad} pixels. Save and/or return crop
