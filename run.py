@@ -129,11 +129,11 @@ def detect(ip_camera):
 '''Send health check camera to server'''
 def send_healthcheck(ip_edgecom):
     while True:
-        time.sleep(60)
         named_tuple = time.localtime() 
         time_string = time.strftime("%d-%m-%Y %H:%M:%S", named_tuple)
         print(f"[INFO] Health check notification is being sent out on {time_string}.")  
         health_check_nano(ip_edgecom)
+        time.sleep(60)
 
 
 '''Read the camera resize frame'''
