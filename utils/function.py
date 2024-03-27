@@ -162,9 +162,9 @@ def post_notification(data_send, ip_camera, messages):
         headers = {}
 
         response = requests.request("POST", url, headers=headers, data=payload, files=files)
-        print("[INFO] Notifications sent successfully ✅!")
+        print("[INFO] Notifications sent successfully!")
     except:
-        print("[INFO] Notifications sent fail ❌!")
+        print("[INFO] Notifications sent fail!")
         print('[INFO] Error:')
         traceback.print_exc() 
         pass
@@ -179,9 +179,9 @@ def health_check_nano(ip_edgecom):
         'Content-Type': 'application/json'
         }
         response = requests.request("PUT", url, headers=headers, data=payload)
-        print("[INFO] Health check sent successfully ✅!")
+        print("[INFO] Health check sent successfully!")
     except:
-        print("[INFO] Health check sent fail ❌!")
+        print("[INFO] Health check sent fail!")
         print('[INFO] Error:')
         traceback.print_exc() 
         pass
@@ -200,17 +200,18 @@ def detect_v8(image, ip_camera, pts, conf_thres, iou_thres, model, imgsz, stride
                 cv2.imwrite(f'{settings.IMAGE_FOLDER}/detected.jpg', im_show)
                 
                 # get infomation
+                print('[INFO] Detected !')
                 status, messages = get_message(classified_overlap, json_object)
+                print(f'[INFO] {messages}')
                 try:
                     post_notification(status, ip_camera, messages) # send notification to server
-                    print('[INFO] Detected 🆘!')
                 except UnboundLocalError:
                     pass
      
         else:
-            print('[INFO] Good ✅!')
+            print('[INFO] Good!')
     except:
-        print("[INFO] Detected object fail ❌.")
+        print("[INFO] Detected object fail.")
         print('[INFO] Error:')
         traceback.print_exc() 
 
@@ -249,10 +250,10 @@ def get_information_from_server(IPCAM, IPEDCOM):
         json_file = open(os.path.join(os.getcwd(), 'info.json'), "w+")
         json_file.write(json.dumps(data, indent = 5))
         json_file.close()
-        print('[INFO] Updated information from server successfully ✅.')
+        print('[INFO] Updated information from server successfully.')
 
     except:
-        print("[INFO] Updated information from server fail ❌.")
+        print("[INFO] Updated information from server fail.")
         print('[INFO] Error:')
         traceback.print_exc()   
 
@@ -271,9 +272,9 @@ def update_frame_dimension(HEIGHTCAM, WIDTHCAM, IPCAM):
         }
 
         response = requests.request("PUT", url, headers=headers, data=payload)        
-        print('[INFO] Updated H and W to server successfully ✅.')
+        print('[INFO] Updated H and W to server successfully.')
     except:
-        print("[INFO] Updated H and W to server fail ❌.")
+        print("[INFO] Updated H and W to server fail.")
         print('[INFO] Error:')
         traceback.print_exc()     
 
@@ -291,10 +292,10 @@ def checking_internet():
             status = False
         
         if status == True:
-            print('[INFO] Internet is available ✅.')
+            print('[INFO] Internet is available.')
             break
         else:
-            print('[INFO] Internet is not available ❌.')
+            print('[INFO] Internet is not available.')
             print(f'[INFO] Time left to reboot if there is no internet connection: {180 - count_seconds}s.')
             for i in range(5):
                 print(f'Time: {i+1}s')
@@ -313,11 +314,11 @@ def checking_camera(URL):
         cap = VideoStream(URL).start()
         grabbed, frame = cap.read()
         if grabbed:
-            print('[INFO] Connected camera successfully ✅.')
+            print('[INFO] Connected camera successfully.')
             cap.stop()
             break
         else:
-            print('[INFO] Connected camera fail, again ❌ ...')
+            print('[INFO] Connected camera fail, again ...')
             for i in range(5):
                 print(f'Time: {i+1}s')
                 time.sleep(1)

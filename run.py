@@ -95,6 +95,9 @@ with open('object.json', 'r', encoding='utf-8') as outfile:
     json_object = json.load(outfile)
 
 
+time.sleep(5)
+
+
 app = Flask(__name__)
 CORS(app)
 
@@ -107,7 +110,7 @@ def index():
 def detect(ip_camera):
     conf_thres = settings.CONF_THRES # confidence threshold
     iou_thres = settings.IOU_THRES # NMS IOU threshold
-    weight_path = os.path.join(settings.MODEL, 'best.pt')
+    weight_path = os.path.join(settings.MODEL, 'bestv8.pt')
 
     """Detect object on input image"""
     model = YOLO(weight_path, "detect")
@@ -170,8 +173,8 @@ def video_feed_resize():
 def download():
     try:
         file = request.files['file']
-        file.save('./resources/weight_init/best.pt')
-        mess = '[INFO] Model saved successfully ✅.'
+        file.save('./resources/weight_init/bestv8.pt')
+        mess = '[INFO] Model saved successfully.'
         os.system("shutdown -r -t 10")
         return jsonify(status_code = 200, content={'message':mess})
     except SystemError as error:
@@ -183,10 +186,10 @@ def download():
 def update_info():
     try:
         get_information_from_server(IPCAM, IPEDGECOM)
-        mess = '[INFO] Updated information successfully ✅.'
+        mess = '[INFO] Updated information successfully.'
         return jsonify(status_code = 200, content={'message':mess})
     except SystemError as error:
-        mess = '[INFO] Updated information fail ❌ ...'
+        mess = '[INFO] Updated information fail ...'
         return jsonify(status_code = 400, content={"success":"false", "error": str(error)})
 
 

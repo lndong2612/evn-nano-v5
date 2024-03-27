@@ -28,6 +28,7 @@ test/*.py
 !test/test-reconnect-ip_flask.py
 # test/*
 data/images/*
+data/test/*
 !data/*.yaml
 !data/hyps
 !data/scripts
