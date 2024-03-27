@@ -38,9 +38,10 @@ def clip_boxes(boxes, shape):
         boxes[..., [1, 3]] = boxes[..., [1, 3]].clip(0, shape[0])  # y1, y2
 
 
-def get_detected_object_v8(source, conf_thres, iou_thres, model, imgsz, stride, json_object):
+def get_detected_object_v8(source, conf_thres, iou_thres, model, json_object):
     classified = []
     imgsz = (640, 640)  # inference size (height, width)
+    stride = 1
     max_det = 10  # maximum detections per image
     agnostic_nms = False # class-agnostic NMS
 

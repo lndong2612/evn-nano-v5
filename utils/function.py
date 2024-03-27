@@ -187,11 +187,11 @@ def health_check_nano(ip_edgecom):
         pass
 
 
-def detect_v8(image, ip_camera, pts, conf_thres, iou_thres, model, imgsz, stride, json_object):
+def detect_v8(image, ip_camera, pts, conf_thres, iou_thres, model, json_object):
     try:
         input_image = f'{settings.IMAGE_FOLDER}/original.jpg' # original image path
         cv2.imwrite(input_image, image) # save original image
-        classified = get_detected_object_v8(input_image, conf_thres, iou_thres, model, imgsz, stride, json_object) # objects detection on image with yolov8            
+        classified = get_detected_object_v8(input_image, conf_thres, iou_thres, model, json_object) # objects detection on image with yolov8            
         if len(classified) != 0:
             classified_overlap = check_overlap(classified, pts)  
             if len(classified_overlap) != 0:
@@ -390,3 +390,12 @@ def get_message(classified, json_object):
     }
 
     return status, messages
+
+def analyze():
+    from jtop import jtop
+    with jtop() as jetson:
+        # jetson.ok() will provide the proper update frequency
+        while jetson.ok():
+            # Read tegra stats
+            stats = jetson.stats
+            return stats

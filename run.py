@@ -114,8 +114,6 @@ def detect(ip_camera):
 
     """Detect object on input image"""
     model = YOLO(weight_path, "detect")
-    imgsz = 640
-    stride = 1
     
     while True:
         with open(os.path.join(os.getcwd(), 'info.json'), "r") as outfile:
@@ -123,7 +121,7 @@ def detect(ip_camera):
             PTS = info_json['coordinate']
             IDENTIFICATIONTIME = info_json['identification_time']    
         _, frame_detect = cap.read()
-        detect_v8(frame_detect, ip_camera, PTS, conf_thres, iou_thres, model, imgsz, stride, json_object)
+        detect_v8(frame_detect, ip_camera, PTS, conf_thres, iou_thres, model, json_object)
         time.sleep(IDENTIFICATIONTIME)
 
 
