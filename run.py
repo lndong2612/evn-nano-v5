@@ -26,6 +26,12 @@ dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
 print("[INFO] Date and time computer start: ", dt_string)
 
 
+'''Auto reboot computer at 5:30 PM '''
+print("[INFO] Time to reboot computer ...")
+cmd_auto_reboot = 'shutdown -r 17:30'
+os.system(cmd_auto_reboot)
+
+
 '''Wait computer detect sim card'''
 print("[INFO] Wait for the sim card to be activated ...")
 for i in range(30):
