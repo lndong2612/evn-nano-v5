@@ -115,7 +115,7 @@ def detect(ip_camera, option_model):
     print(f'[INFO] Option: {option_model} model{"s" if int(option_model) > 1 else ""}.')
     if option_model == 1:
         """Detect object on input image"""
-        weight_path = os.path.join(settings.MODEL, 'best.pt') # model path
+        weight_path = os.path.join(settings.MODEL, 'bestv5.pt') # model path
         model, pt, bs, imgsz, names, stride = load_model(weight_path, device, settings.DATA_COCO)  
         while True:
             with open(os.path.join(os.getcwd(), 'info.json'), "r") as outfile:
@@ -131,10 +131,10 @@ def detect(ip_camera, option_model):
 
     elif option_model == 2:
         """Detect object on input image"""
-        weight_path = os.path.join(settings.MODEL, 'fire.pt') # model path
+        weight_path = os.path.join(settings.MODEL, 'firev5.pt') # model path
         model, pt, bs, imgsz, names, stride = load_model(weight_path, device, settings.DATA_COCO)  
 
-        weight_path2 = os.path.join(settings.MODEL, 'best.pt') # model path
+        weight_path2 = os.path.join(settings.MODEL, 'bestv5.pt') # model path
         model2, pt2, bs2, imgsz2, names2, stride2 = load_model(weight_path2, device, settings.DATA_COCO)  
 
         while True:
@@ -196,7 +196,7 @@ def video_feed_resize():
 def download():
     try:
         file = request.files['file']
-        file.save('./resources/weight_init/best.pt')
+        file.save('./resources/weight_init/bestv5.pt')
         mess = '[INFO] Model saved successfully.'
         os.system("shutdown -r -t 10")
         return jsonify(status_code = 200, content={'message':mess})
