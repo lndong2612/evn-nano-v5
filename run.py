@@ -26,12 +26,6 @@ dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
 print("[INFO] Date and time computer start: ", dt_string)
 
 
-'''Auto reboot computer at 5AM '''
-print("[INFO] Time to reboot computer ...")
-cmd_auto_reboot = 'shutdown -r 18:00'
-os.system(cmd_auto_reboot)
-
-
 '''Wait computer detect sim card'''
 print("[INFO] Wait for the sim card to be activated ...")
 for i in range(30):
@@ -63,6 +57,7 @@ with open(os.path.join(os.getcwd(), 'info.json'), "r") as outfile:
     PASSWORDCAM = info_json['password_camera']
     PORTCAM = info_json['port_camera']
     RTSP_FORMAT = info_json['rtsp_format']
+
 
 '''Get information from server and update into json file'''
 get_information_from_server(IPCAM, IPEDGECOM)
@@ -140,7 +135,7 @@ def generate_resize():
     prev = 0 # Previous frame time
     while True:
         time_elapsed = time.time() - prev
-        frame_out_resize = cap.read()
+        _, frame_out_resize = cap.read()
         if time_elapsed > 1./settings.FRAME_RATE:
             prev = time.time()     
             frame_resize = cv2.resize(frame_out_resize, (853, 480))
@@ -176,7 +171,7 @@ def download():
         os.system("shutdown -r -t 10")
         return jsonify(status_code = 200, content={'message':mess})
     except SystemError as error:
-        mess = '[INFO] Model saved fail ❌ ...'
+        mess = '[INFO] Model saved fail ...'
         return jsonify(status_code = 400, content={"success":"false", "error": str(error)})
 
 
