@@ -221,8 +221,8 @@ def detect_v5_2(image, ip_camera, pts, conf_thres, iou_thres, model, pt, bs, img
         input_image = f'{settings.IMAGE_FOLDER}/original.jpg' # original image path
         cv2.imwrite(input_image, image) # save original image
 
-        classified1 = get_detected_object_v5(input_image, conf_thres, iou_thres, model, pt, bs, imgsz, names, stride, json_object, allow_classes=2) # objects detection with model 1
-        classified2 = get_detected_object_v5(input_image, conf_thres, iou_thres, model2, pt2, bs2, imgsz2, names2, stride2, json_object, allow_classes=1) # objects detection with model 2
+        classified1 = get_detected_object_v5(input_image, conf_thres, iou_thres, model, pt, bs, imgsz, names, stride, json_object, allow_classes=2) # [Fire]
+        classified2 = get_detected_object_v5(input_image, conf_thres, iou_thres, model2, pt2, bs2, imgsz2, names2, stride2, json_object, allow_classes=1) # [Smoke Vehicle Kite Tree]
         classified = classified1 + classified2 # combine 2 results
         if len(classified) != 0:
             classified_overlap = check_overlap(classified, pts)  
