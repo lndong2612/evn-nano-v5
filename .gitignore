@@ -26,6 +26,7 @@ test/*.py
 !test/test-ipcam.py
 !test/test-flask-ipcam.py
 !test/test-reconnect-ip_flask.py
+!test/test-analyze.py
 # test/*
 data/images/*
 data/test/*

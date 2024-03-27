@@ -7,6 +7,7 @@ import json
 import time
 import requests
 import traceback
+from jtop import jtop
 from config import settings
 from threading import Thread
 from datetime import datetime
@@ -423,3 +424,11 @@ def get_message(classified, json_object):
     }
 
     return status, messages
+
+def analyze():
+    with jtop() as jetson:
+        # jetson.ok() will provide the proper update frequency
+        while jetson.ok():
+            # Read tegra stats
+            stats = jetson.stats
+            return stats
