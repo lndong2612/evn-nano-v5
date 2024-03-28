@@ -213,7 +213,8 @@ def detect_v8(image, ip_camera, pts, conf_thres, iou_thres, model, json_object):
     except:
         print("[INFO] Detected object fail.")
         print('[INFO] Error:')
-        traceback.print_exc() 
+        traceback.print_exc()
+        pass 
 
 
 '''Update information from server into json file'''
@@ -307,6 +308,34 @@ def checking_internet():
             
             continue
 
+
+def checking_internet_auto():
+    status = ''
+    count_seconds = 0
+    while(True):
+        try:
+            url('https://google.com.vn/', timeout=3) # UBUNTU
+            status = True
+        except Exception as e:
+            status = False
+        
+        if status == True:
+            print('[INFO] Internet is available.')
+            time.sleep(180)
+            continue
+        else:
+            print('[INFO] Internet is not available.')
+            print(f'[INFO] Time left to reboot if there is no internet connection: {180 - count_seconds}s.')
+            for i in range(5):
+                print(f'Time: {i+1}s')
+                time.sleep(1)
+                count_seconds += 1
+
+            if count_seconds == 180:
+                os.system("sudo reboot")
+            
+            continue
+        
 
 '''Ping to check camera'''
 def checking_camera(URL):

@@ -14,7 +14,7 @@ from ultralytics import YOLO
 from datetime import datetime
 from flask import Flask, jsonify, Response, request
 from utils.function import (detect_v8, health_check_nano, get_information_from_server , 
-                            update_frame_dimension, checking_internet, checking_camera, VideoStream)
+                            update_frame_dimension, checking_internet, checking_internet_auto, checking_camera, VideoStream)
 
 ''' cuda device, i.e. 0 or 0,1,2,3 or cpu'''
 device = '' 
@@ -140,18 +140,21 @@ def send_healthcheck(ip_edgecom):
 def generate_resize():
     prev = 0 # Previous frame time
     while True:
-        time_elapsed = time.time() - prev
-        _, frame_out_resize = cap.read()
-        if time_elapsed > 1./settings.FRAME_RATE:
-            prev = time.time()     
-            frame_resize = cv2.resize(frame_out_resize, (853, 480))
-            (flag, encodedImage) = cv2.imencode(".jpg", frame_resize)
-            # ensure the frame was successfully encoded
-            if not flag:
-                continue
-            # yield the output frame in the byte format
-            yield(b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' + 
-                bytearray(encodedImage) + b'\r\n')
+        try:
+            time_elapsed = time.time() - prev
+            _, frame_out_resize = cap.read()
+            if time_elapsed > 1./settings.FRAME_RATE:
+                prev = time.time()     
+                frame_resize = cv2.resize(frame_out_resize, (853, 480))
+                (flag, encodedImage) = cv2.imencode(".jpg", frame_resize)
+                # ensure the frame was successfully encoded
+                if not flag:
+                    continue
+                # yield the output frame in the byte format
+                yield(b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' + 
+                    bytearray(encodedImage) + b'\r\n')
+        except Exception:
+            continue
 
 
 def handler():
@@ -212,6 +215,10 @@ if __name__ == "__main__":
     p2 = threading.Thread(target=send_healthcheck, args=(IPEDGECOM,))
     p2.daemon = True
     p2.start()
+
+    p3 = threading.Thread(target=checking_internet_auto, args=())
+    p3.daemon = True
+    p3.start()
 
     host = settings.HOST
     port = int(settings.PORT)
