@@ -284,6 +284,8 @@ def update_frame_dimension(HEIGHTCAM, WIDTHCAM, IPCAM):
 def checking_internet():
     status = ''
     count_seconds = 0
+    print("[INFO] Checking internet at " +
+        datetime.now().strftime("%m-%d-%Y %I:%M:%S%p"))    
     while(True):
         try:
             url('https://google.com.vn/', timeout=3) # UBUNTU
@@ -313,6 +315,8 @@ def checking_internet_auto():
     status = ''
     count_seconds = 0
     while(True):
+        print("[INFO] Checking internet at " +
+            datetime.now().strftime("%m-%d-%Y %I:%M:%S%p"))     
         try:
             url('https://google.com.vn/', timeout=3) # UBUNTU
             status = True
