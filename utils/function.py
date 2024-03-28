@@ -426,9 +426,17 @@ def get_message(classified, json_object):
 
 def analyze():
     from jtop import jtop
-    with jtop() as jetson:
-        # jetson.ok() will provide the proper update frequency
-        while jetson.ok():
-            # Read tegra stats
-            stats = jetson.stats
-            return stats
+    while(True):
+        with jtop() as jetson:
+            # jetson.ok() will provide the proper update frequency
+            while jetson.ok():
+                # Read tegra stats
+                stats = jetson.stats
+                print("[INFO] Analyze system at " +
+                    datetime.now().strftime("%m-%d-%Y %I:%M:%S%p"))     
+                Temp_AO = stats['Temp AO']
+                Temp_CPU = stats['Temp CPU']
+                Temp_GPU = stats['Temp GPU']
+                Temp_PLL = stats['Temp PLL']
+                print(f'[INFO] Temperature\nAO: {Temp_AO}\nCPU: {Temp_CPU}\nGPU: {Temp_GPU}\nPLL: {Temp_PLL}\n')
+                time.sleep(60)

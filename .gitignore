@@ -23,6 +23,7 @@ data/videos/*
 resources/images/*.jpg
 resources/weight_init/*
 test/*.py
+!test/test-analyze.py
 !test/test-ipcam.py
 !test/test-flask-ipcam.py
 !test/test-reconnect-ip_flask.py
